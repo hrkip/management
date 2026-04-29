@@ -218,62 +218,48 @@
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
             
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    if (response.success) {
-                        // Simpan data user (termasuk Role) ke Session
-                        localStorage.setItem('currentUser', JSON.stringify(response.user));
-                        
-                        // REFINEMENT: Logika penyimpanan Remember Me
-                        if (rememberChecked) {
-                            localStorage.setItem('ki_remembered_username', usernameInput);
-                            localStorage.setItem('ki_remembered_password', passwordInput);
-                        } else {
-                            localStorage.removeItem('ki_remembered_username');
-                            localStorage.removeItem('ki_remembered_password');
-                        }
-                        
-                        submitBtn.classList.replace('bg-secondary', 'bg-green-600');
-                        btnSpinner.classList.add('hidden');
-                        btnText.textContent = 'Access Granted!';
-                        
-                        setTimeout(() => {
-                            mainCard.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-                            mainCard.style.opacity = "0";
-                            mainCard.style.transform = "scale(0.95)";
-                            
-                            const userRole = response.user.role.toString().toLowerCase();
-                            
-                            // FIX: Helper function defined securely inside the scope
-                            const renderNextLayer = function(html) {
-                                document.open();
-                                document.write(html);
-                                document.close();
-                            };
-                            
-                            if (userRole.includes('manager')) {
-                                // Load UI Manager
-                                google.script.run
-                                    .withSuccessHandler(renderNextLayer)
-                                    .getManagerDashboardHtml();
-                            } else {
-                                // Load UI Supervisor / Admin default
-                                google.script.run
-                                    .withSuccessHandler(renderNextLayer)
-                                    .getDashboardHtml();
-                            }
-                        }, 600);
-                        
-                    } else {
-                        resetButton();
-                        alert(response.message);
-                    }
-                })
-                .withFailureHandler(function(error) {
-                    resetButton();
-                    alert("Connection error. Please try again.");
-                })
-                .processLogin(usernameInput, passwordInput);
+            apiCall("processLogin", {
+              username: usernameInput,
+              password: passwordInput
+            }).then(function(response) {
+              if (response && response.success) {
+                localStorage.setItem('currentUser', JSON.stringify(response.user));
+            
+                if (rememberChecked) {
+                  localStorage.setItem('ki_remembered_username', usernameInput);
+                  localStorage.setItem('ki_remembered_password', passwordInput);
+                } else {
+                  localStorage.removeItem('ki_remembered_username');
+                  localStorage.removeItem('ki_remembered_password');
+                }
+            
+                submitBtn.classList.replace('bg-secondary', 'bg-green-600');
+                btnSpinner.classList.add('hidden');
+                btnText.textContent = 'Access Granted!';
+            
+                setTimeout(() => {
+                  mainCard.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                  mainCard.style.opacity = "0";
+                  mainCard.style.transform = "scale(0.95)";
+            
+                  const userRole = response.user.role.toString().toLowerCase();
+            
+                  if (userRole.includes('manager')) {
+                    window.location.href = "DashboardManager.html";
+                  } else {
+                    window.location.href = "Dashboard.html";
+                  }
+                }, 600);
+            
+              } else {
+                resetButton();
+                alert((response && response.message) || "Invalid username or password.");
+              }
+            }).catch(function(error) {
+              console.error("Login API error:", error);
+              resetButton();
+              alert("Connection error. Please try again.");
+            });
 
             function resetButton() {
                 btnText.textContent = 'Login Securely';
