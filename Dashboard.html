@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<script src="./api.js"></script>
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Kampung Inggris Pontianak - Supervisor Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "secondary": "#b22b1d",
+            "primary": "#00003c",
+            "surface": "#fcf9f8",
+            "primary-container": "#000080"
+          },
+          fontFamily: {
+            "lexend": ["Lexend"],
+            "body-md": ["Lexend"]
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-image: radial-gradient(circle at top right, #00003c 0%, #090b0c 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .calendar-day {
+      min-height: 72px;
+    }
+
+    .calendar-day:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .calendar-selected {
+      background: rgba(37, 99, 235, 0.85) !important;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+    }
+
+    .calendar-today {
+      border: 1px solid rgba(178, 43, 29, 0.8);
+    }
+
+    .dock-container::-webkit-scrollbar { display: none; }
+
+    .dock-item {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: bottom;
+    }
+
+    .dock-item:hover {
+      transform: scale(1.2) translateY(-8px);
+      z-index: 50;
+    }
+
+    .dock-item:active {
+      transform: scale(1.1) translateY(-4px);
+    }
+
+    .dock-active {
+      background-color: #1e3a8a;
+      color: white !important;
+      transform: translateY(-8px);
+      box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.4);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fade-in 0.35s ease-out forwards;
+    }
+
+    .tab-active {
+      display: block;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fade-in 0.35s ease-out forwards;
+    }
+  </style>
+</head>
+
+<body class="font-body-md text-white selection:bg-secondary/30 pb-28">
+
+  <header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-white/5 backdrop-blur-md shadow-sm border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 bg-primary-container rounded-lg flex items-center justify-center">
+        <span class="material-symbols-outlined text-white">school</span>
+      </div>
+      <div>
+        <h1 class="font-lexend font-bold text-lg text-white leading-tight">Kampung Inggris Pontianak</h1>
+        <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold">Supervisor Activity Board</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-white/80 text-sm">
+        <span class="material-symbols-outlined text-[18px]">event_available</span>
+        <span id="todayHeaderLabel">Today</span>
+      </div>
+
+      <button onclick="logout()" class="p-2 hover:bg-white/10 transition-colors rounded-full text-white active:scale-95" title="Logout">
+        <span class="material-symbols-outlined">logout</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="pt-24 px-6 md:px-10 w-full max-w-[1600px] mx-auto">
+
+    <section class="mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
+        <div>
+          <h2 id="welcomeName" class="font-lexend text-3xl md:text-4xl font-bold text-white mb-2">Welcome</h2>
+          <p id="userRole" class="text-white/60 text-sm md:text-base">View assigned activities from management calendar.</p>
+        </div>
+
+        <div id="summaryBadges" class="flex flex-wrap gap-2">
+          <span class="bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+            Loading activities...
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div id="tab-Activities" class="tab-content tab-active">
+      <section class="grid grid-cols-1 xl:grid-cols-12 gap-5 h-[calc(100vh-180px)] min-h-[680px]">
+
+        <div class="xl:col-span-8 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
+          <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+            <h3 id="calendarMonthYear" class="text-xl font-bold text-white font-lexend flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary text-2xl">calendar_month</span>
+              Loading...
+            </h3>
+
+            <div class="flex items-center gap-1">
+              <button onclick="changeMonth(-1)" class="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">chevron_left</span>
+              </button>
+
+              <button onclick="resetToToday()" class="px-4 py-2 rounded-full bg-white/10 text-white text-[11px] font-bold hover:bg-white/20 transition-colors">
+                TODAY
+              </button>
+
+              <button onclick="changeMonth(1)" class="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-white/40 tracking-widest">
+            <div>SUN</div>
+            <div>MON</div>
+            <div>TUE</div>
+            <div>WED</div>
+            <div>THU</div>
+            <div>FRI</div>
+            <div>SAT</div>
+          </div>
+
+          <div id="calendarGrid" class="grid grid-cols-7 gap-2 flex-grow content-stretch min-h-0">
+            <div class="col-span-7 text-center py-20 text-white/30 text-sm">Loading calendar...</div>
+          </div>
+        </div>
+
+        <div class="xl:col-span-4 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
+          <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+            <div>
+              <h3 id="selectedDateLabel" class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-400">view_agenda</span>
+                Daily Activities
+              </h3>
+              <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">View only</p>
+            </div>
+
+            <span id="activityCountLabel" class="text-[10px] bg-white/10 px-2 py-1 rounded text-white/60 font-bold">
+              0 Items
+            </span>
+          </div>
+
+          <div id="dailyActivityContainer" class="flex-grow overflow-y-auto space-y-3 pr-2 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+            <div class="text-center py-20 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+              Select a date to view activities.
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <div id="tab-Feedback" class="tab-content">
+      <section class="glass-panel rounded-3xl p-6 min-h-[680px]">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5 mb-6 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="font-lexend text-3xl font-bold text-white mb-2">Daily Feedback</h2>
+            <p class="text-white/60 text-sm">Write daily reports, agenda notes, obstacles, or suggested ideas.</p>
+          </div>
+
+          <span class="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+            Supervisor Notes
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 h-full min-h-[640px]">
+            <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-400">edit_note</span>
+              Submit Note
+            </h3>
+
+            <form id="feedbackForm" class="space-y-4">
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Date</label>
+                <input id="feedbackDate" type="date" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm [color-scheme:dark]">
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Type</label>
+                <select id="feedbackType" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
+                  <option value="Daily Report" class="text-black">Daily Report</option>
+                  <option value="Agenda Note" class="text-black">Agenda Note</option>
+                  <option value="Obstacle" class="text-black">Obstacle</option>
+                  <option value="Suggested Idea" class="text-black">Suggested Idea</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Branch Name</label>
+                <select id="feedbackBranch" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
+                  <option value="" disabled selected class="text-black">Select branch...</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Related Agenda</label>
+                <select id="feedbackAgenda" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
+                  <option value="" class="text-black">General / Not linked</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Reference Link Optional</label>
+                <input id="feedbackLink" type="url" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm" placeholder="https://drive.google.com/...">
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Notes</label>
+                <textarea id="feedbackNote" required rows="7" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 text-sm resize-none" placeholder="Write your report or idea here..."></textarea>
+              </div>
+
+              <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">send</span>
+                Submit Feedback
+              </button>
+            </form>
+          </div>
+
+          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col h-full min-h-[640px] overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 border-b border-white/10 pb-4">
+              <h3 class="font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-orange-400">history</span>
+                Recent Notes
+              </h3>
+
+              <div class="flex items-center gap-2">
+                <input id="feedbackFilterDate" type="date" onchange="loadFeedbackList()" class="bg-black/20 border border-white/10 text-white rounded-lg py-1.5 px-2 outline-none focus:border-orange-500 text-xs [color-scheme:dark]">
+                <button type="button" onclick="clearFeedbackFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-lg text-white/60 font-bold">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div id="feedbackList" class="space-y-3 flex-grow overflow-y-auto pr-2 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+                No feedback submitted yet.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="tab-Files" class="tab-content">
+      <section class="glass-panel rounded-3xl p-6 min-h-[680px] flex flex-col">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-5 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="font-lexend text-3xl font-bold text-white mb-2">The Vault</h2>
+            <p class="text-white/60 text-sm">Access shared SOPs, documents, curriculum files, and reference links.</p>
+          </div>
+
+          <div class="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div class="relative flex-grow lg:w-80">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-[18px]">search</span>
+              <input type="text" id="vaultSearch" onkeyup="renderVaultFiles()" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 pl-9 pr-4 outline-none focus:border-blue-500 transition-all text-sm" placeholder="Search files...">
+            </div>
+
+            <button onclick="openAddFileModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 text-sm">
+              <span class="material-symbols-outlined text-[18px]">upload</span>
+              Store Link
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 flex-shrink-0" style="scrollbar-width: none;" id="vaultCategoriesList">
+          <div class="text-xs text-white/50 italic">Loading categories...</div>
+        </div>
+
+        <div id="vaultFilesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Loading files...
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <div id="addFileModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="addFileContent">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-blue-400">upload_file</span>
+          Store New File Link
+        </h3>
+
+        <button type="button" onclick="closeAddFileModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="formAddFile" class="space-y-4">
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">File Title</label>
+          <input type="text" id="newFileTitle" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. SOP Kelas Speaking">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
+          <select id="newFileCategory" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm appearance-none cursor-pointer">
+            <option value="" disabled selected class="text-black">Loading categories...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Google Drive / Document Link</label>
+          <input type="url" id="newFileLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="https://drive.google.com/...">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Short Description</label>
+          <textarea id="newFileDesc" rows="3" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm resize-none" placeholder="Brief details about this file..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeAddFileModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">
+            Cancel
+          </button>
+          <button type="submit" id="btnSaveFile" class="bg-blue-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-blue-500 shadow-lg shadow-blue-600/20">
+            Save File
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
+    <div class="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl mx-auto flex items-end px-3 py-2 gap-3 dock-container pointer-events-auto">
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Activities')">
+        <button id="btn-Activities" class="text-white bg-blue-900 rounded-xl p-2.5 shadow-lg dock-active transition-all duration-300 pointer-events-none">
+          <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-100 transition-opacity">Activities</span>
+      </div>
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Feedback')">
+        <button id="btn-Feedback" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+          <span class="material-symbols-outlined text-[20px]">rate_review</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Feedback</span>
+      </div>
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Files')">
+        <button id="btn-Files" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+          <span class="material-symbols-outlined text-[20px]">folder_open</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Files</span>
+      </div>
+
+    </div>
+  </nav>
+
+  <div id="logoutModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[9999]">
+    <div class="bg-white rounded-xl p-6 w-[300px] text-center shadow-2xl">
+      <h3 class="text-gray-800 font-bold text-lg mb-2">Confirm Logout</h3>
+      <p class="text-gray-500 text-sm mb-5">Are you sure you want to logout?</p>
+
+      <div class="flex justify-center gap-3">
+        <button onclick="closeLogoutModal()" class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">
+          Cancel
+        </button>
+        <button onclick="confirmLogout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600">
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // GLOBAL STATE
+    // ==========================================
+    let globalTasks = [];
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+    let selectedDateStr = currentDate.toDateString();
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const catStyles = {
+      "Program": {
+        dot: "bg-orange-400",
+        chip: "bg-orange-500/20 text-orange-300 border-orange-500/30"
+      },
+      "Meeting": {
+        dot: "bg-blue-400",
+        chip: "bg-blue-500/20 text-blue-300 border-blue-500/30"
+      },
+      "Event": {
+        dot: "bg-pink-400",
+        chip: "bg-pink-500/20 text-pink-300 border-pink-500/30"
+      },
+      "Curriculum": {
+        dot: "bg-purple-400",
+        chip: "bg-purple-500/20 text-purple-300 border-purple-500/30"
+      },
+      "Maintenance": {
+        dot: "bg-green-400",
+        chip: "bg-green-500/20 text-green-300 border-green-500/30"
+      }
+    };
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", () => {
+      const userData = JSON.parse(localStorage.getItem("currentUser"));
+
+      document.getElementById("todayHeaderLabel").textContent = new Date().toDateString();
+
+      if (userData) {
+        document.getElementById("welcomeName").textContent = `Welcome, ${userData.username}`;
+        document.getElementById("userRole").textContent = `Branch: ${userData.branch || "-"} | Role: ${userData.role || "-"}`;
+      }
+
+      const feedbackDate = document.getElementById("feedbackDate");
+      if (feedbackDate) {
+        feedbackDate.value = new Date().toISOString().split("T")[0];
+      }
+
+      const feedbackForm = document.getElementById("feedbackForm");
+      if (feedbackForm) {
+        feedbackForm.addEventListener("submit", handleFeedbackSubmit);
+      }
+
+      populateFeedbackBranchOptions();
+      loadSupervisorCalendarTasks();
+      loadFeedbackList();
+      loadVaultData();
+    });
+
+    // ==========================================
+    // TABS
+    // ==========================================
+    const tabs = ["Activities", "Feedback", "Files"];
+
+    function switchTab(activeTabName) {
+      tabs.forEach(tab => {
+        const contentEl = document.getElementById(`tab-${tab}`);
+        const btnEl = document.getElementById(`btn-${tab}`);
+
+        if (contentEl) {
+          if (tab === activeTabName) {
+            contentEl.classList.add("tab-active");
+          } else {
+            contentEl.classList.remove("tab-active");
+          }
+        }
+
+        if (btnEl) {
+          const labelEl = btnEl.nextElementSibling;
+
+          if (tab === activeTabName) {
+            btnEl.classList.add("dock-active", "bg-blue-900");
+            btnEl.classList.remove("text-white/60", "bg-transparent");
+            labelEl.classList.add("opacity-100");
+            labelEl.classList.remove("opacity-0");
+          } else {
+            btnEl.classList.remove("dock-active", "bg-blue-900");
+            btnEl.classList.add("text-white/60", "bg-transparent");
+            labelEl.classList.remove("opacity-100");
+            labelEl.classList.add("opacity-0");
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // DATA SOURCE: SAME AS MANAGER CALENDAR
+    // Reads Tasks sheet through Code.gs getAllManagerTasks()
+    // ==========================================
+    function loadSupervisorCalendarTasks() {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (!response || !response.success) {
+            console.error("getAllManagerTasks failed:", response);
+            globalTasks = [];
+            renderSummaryBadges();
+            renderCalendar();
+            renderDailyActivities();
+            populateFeedbackAgendaOptions();
+            return;
+          }
+
+          globalTasks = (response.data || []).map(normalizeTask).filter(t => t.targetDate);
+
+          renderSummaryBadges();
+          renderCalendar();
+          renderDailyActivities();
+          populateFeedbackAgendaOptions();
+        })
+        .withFailureHandler(function(error) {
+          console.error("getAllManagerTasks error:", error);
+          globalTasks = [];
+          renderSummaryBadges();
+          renderCalendar();
+          renderDailyActivities();
+          populateFeedbackAgendaOptions();
+        })
+        .getAllManagerTasks();
+    }
+
+
+
+    function normalizeTask(task) {
+      const rawDate = task.targetDate || task.date || task.deadline || task.dateValue || "";
+      const parsedDate = rawDate ? new Date(rawDate) : null;
+      const isValidDate = parsedDate && !isNaN(parsedDate);
+
+      return {
+        id: String(task.id || task.rowId || ""),
+        title: String(task.title || "Untitled Activity"),
+        category: String(task.category || "Program"),
+        status: String(task.status || "Pending"),
+        assignee: String(task.assignee || task.spv || "Unassigned"),
+        link: String(task.link || task.links || task.docLink || ""),
+        notes: String(task.notes || task.desc || ""),
+        targetDate: isValidDate ? parsedDate.toDateString() : "",
+        dateValue: isValidDate ? parsedDate.toISOString().split("T")[0] : ""
+      };
+    }
+
+    // ==========================================
+    // SUMMARY
+    // ==========================================
+    function renderSummaryBadges() {
+      const wrap = document.getElementById("summaryBadges");
+      const total = globalTasks.length;
+      const today = globalTasks.filter(t => t.targetDate === new Date().toDateString()).length;
+      const pending = globalTasks.filter(t => t.status === "Pending").length;
+
+      wrap.innerHTML = `
+        <span class="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+          ${total} Total Activities
+        </span>
+        <span class="bg-orange-500/20 border border-orange-500/30 text-orange-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+          ${today} Today
+        </span>
+        <span class="bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+          ${pending} Pending
+        </span>
+      `;
+    }
+
+    // ==========================================
+    // CALENDAR
+    // ==========================================
+    function renderCalendar() {
+      const monthLabel = document.getElementById("calendarMonthYear");
+      const calendarGrid = document.getElementById("calendarGrid");
+
+      monthLabel.innerHTML = `
+        <span class="material-symbols-outlined text-secondary text-2xl">calendar_month</span>
+        ${monthNames[currentMonth]} ${currentYear}
+      `;
+
+      calendarGrid.innerHTML = "";
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+      for (let i = firstDay; i > 0; i--) {
+        calendarGrid.innerHTML += `
+          <div class="calendar-day rounded-2xl bg-white/[0.02] text-white/20 p-3 text-sm">
+            ${daysInPrevMonth - i + 1}
+          </div>
+        `;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iterDate = new Date(currentYear, currentMonth, day);
+        const iterDateStr = iterDate.toDateString();
+        const isToday = iterDateStr === new Date().toDateString();
+        const isSelected = iterDateStr === selectedDateStr;
+        const tasksToday = globalTasks.filter(t => t.targetDate === iterDateStr);
+
+        let classes = "calendar-day rounded-2xl bg-white/[0.03] p-3 cursor-pointer transition-all border border-white/5 flex flex-col justify-between ";
+        if (isSelected) classes += "calendar-selected ";
+        else if (isToday) classes += "calendar-today ";
+
+        let dotsHtml = "";
+        if (tasksToday.length > 0) {
+          dotsHtml = `<div class="flex gap-1 flex-wrap mt-2">`;
+          tasksToday.slice(0, 5).forEach(t => {
+            const dotClass = catStyles[t.category] ? catStyles[t.category].dot : "bg-white";
+            dotsHtml += `<span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>`;
+          });
+          if (tasksToday.length > 5) {
+            dotsHtml += `<span class="text-[9px] text-white/50 leading-none">+${tasksToday.length - 5}</span>`;
+          }
+          dotsHtml += `</div>`;
+        }
+
+        const countHtml = tasksToday.length > 0
+          ? `<span class="text-[9px] bg-black/30 px-1.5 py-0.5 rounded-full text-white/70 font-bold">${tasksToday.length}</span>`
+          : "";
+
+        calendarGrid.innerHTML += `
+          <div class="${classes}" onclick="selectDate(${currentYear}, ${currentMonth}, ${day})">
+            <div class="flex justify-between items-start">
+              <span class="text-sm font-bold ${isSelected ? 'text-white' : 'text-white/80'}">${day}</span>
+              ${countHtml}
+            </div>
+            ${dotsHtml}
+          </div>
+        `;
+      }
+    }
+
+    function selectDate(year, month, day) {
+      selectedDateStr = new Date(year, month, day).toDateString();
+      renderCalendar();
+      renderDailyActivities();
+    }
+
+    function changeMonth(offset) {
+      currentMonth += offset;
+
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+
+      renderCalendar();
+      renderDailyActivities();
+    }
+
+    function resetToToday() {
+      const now = new Date();
+      currentMonth = now.getMonth();
+      currentYear = now.getFullYear();
+      selectedDateStr = now.toDateString();
+
+      renderCalendar();
+      renderDailyActivities();
+    }
+
+    // ==========================================
+    // DAILY ACTIVITIES
+    // ==========================================
+    function renderDailyActivities() {
+      const container = document.getElementById("dailyActivityContainer");
+      const countLabel = document.getElementById("activityCountLabel");
+      const dateLabel = document.getElementById("selectedDateLabel");
+
+      const selected = new Date(selectedDateStr);
+      dateLabel.innerHTML = `
+        <span class="material-symbols-outlined text-blue-400">view_agenda</span>
+        ${monthNames[selected.getMonth()].substring(0, 3)} ${selected.getDate()}, ${selected.getFullYear()}
+      `;
+
+      const tasksToday = globalTasks.filter(t => t.targetDate === selectedDateStr);
+      countLabel.textContent = `${tasksToday.length} Items`;
+
+      if (tasksToday.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-20 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No activities scheduled for this date.
+          </div>
+        `;
+        return;
+      }
+
+      let html = "";
+
+      tasksToday.forEach(task => {
+        const style = catStyles[task.category]
+          ? catStyles[task.category].chip
+          : "bg-white/10 text-white/60 border-white/20";
+
+        const links = task.link
+          ? task.link.split(",").map((url, index) => {
+              const cleanUrl = url.trim();
+              if (!cleanUrl) return "";
+              return `
+                <a href="${cleanUrl}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">link</span>
+                  Link ${index + 1}
+                </a>
+              `;
+            }).join("")
+          : "";
+
+        html += `
+          <div class="fade-in bg-white/5 border border-white/10 p-4 rounded-2xl hover:border-white/20 transition-all">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div>
+                <h4 class="text-sm font-bold text-white leading-snug">${task.title}</h4>
+                <p class="text-[10px] text-white/45 mt-1">
+                  Assigned to: <span class="text-white/70 font-bold">${task.assignee}</span>
+                </p>
+              </div>
+
+              <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${style}">
+                ${task.category}
+              </span>
+            </div>
+
+            ${task.notes ? `
+              <p class="text-[11px] text-white/55 leading-relaxed bg-black/20 border border-white/5 p-2 rounded-xl mb-3">
+                ${task.notes}
+              </p>
+            ` : ""}
+
+            <div class="flex justify-between items-center gap-3 pt-3 border-t border-white/10">
+              <span class="text-[10px] ${task.status === "Done" || task.status === "Completed" ? "text-green-400" : "text-orange-400"} font-bold uppercase">
+                ${task.status}
+              </span>
+
+              <div class="flex flex-wrap gap-2 justify-end">
+                ${links || `<span class="text-[10px] text-white/30">No links attached</span>`}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // ==========================================
+    // FEEDBACK UI ONLY
+    // Backend save can be added later.
+    // ==========================================
+    function populateFeedbackAgendaOptions() {
+      const select = document.getElementById("feedbackAgenda");
+      if (!select) return;
+
+      select.innerHTML = `<option value="" class="text-black">General / Not linked</option>`;
+
+      globalTasks.forEach(task => {
+        select.innerHTML += `
+          <option value="${task.id}" class="text-black">
+            ${task.dateValue} - ${task.title}
+          </option>
+        `;
+      });
+    }
+
+    function handleFeedbackSubmit(e) {
+      e.preventDefault();
+
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      const selectedAgendaId = document.getElementById("feedbackAgenda").value;
+      const selectedAgenda = globalTasks.find(t => String(t.id) === String(selectedAgendaId));
+
+      const payload = {
+        date: document.getElementById("feedbackDate").value,
+        type: document.getElementById("feedbackType").value,
+        agendaId: selectedAgendaId,
+        agendaTitle: selectedAgenda ? selectedAgenda.title : "General",
+        note: document.getElementById("feedbackNote").value,
+        referenceLink: document.getElementById("feedbackLink").value,
+        createdBy: userData.username || "Unknown"
+      };
+
+      const btn = document.querySelector('#feedbackForm button[type="submit"]');
+      btn.innerHTML = "Saving...";
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.innerHTML = "Submit Feedback";
+          btn.disabled = false;
+
+          if (!res || !res.success) {
+            alert("Failed to save feedback");
+            return;
+          }
+
+          loadFeedbackList();
+
+          const form = document.getElementById("feedbackForm");
+          form.reset();
+          document.getElementById("feedbackDate").value = new Date().toISOString().split("T")[0];
+        })
+        .withFailureHandler(function(err) {
+          btn.innerHTML = "Submit Feedback";
+          btn.disabled = false;
+          alert("Error: " + err);
+        })
+        .saveFeedback(payload);
+    }
+
+    function loadFeedbackList() {
+      const filterInput = document.getElementById("feedbackFilterDate");
+      const filterDate = filterInput ? filterInput.value : "";
+
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+      const createdBy = userData.username || "Unknown";
+
+      const list = document.getElementById("feedbackList");
+      if (list) {
+        list.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Loading your feedback...
+          </div>
+        `;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.success) {
+            console.error("getFeedbackList failed:", res);
+            renderFeedbackList([]);
+            return;
+          }
+
+          renderFeedbackList(res.data || []);
+        })
+        .withFailureHandler(function(err) {
+          console.error("getFeedbackList error:", err);
+          renderFeedbackList([]);
+        })
+        .getFeedbackList(filterDate, createdBy);
+    }
+
+    function clearFeedbackFilter() {
+      document.getElementById("feedbackFilterDate").value = "";
+      loadFeedbackList();
+    }
+
+    function renderFeedbackList(items) {
+      const list = document.getElementById("feedbackList");
+
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No feedback found.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = "";
+
+      items.forEach(item => {
+        const linkHtml = item.referenceLink
+          ? `<a href="${item.referenceLink}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1 mt-2">
+              <span class="material-symbols-outlined text-[12px]">link</span>
+              Reference Link
+            </a>`
+          : "";
+
+        list.insertAdjacentHTML("beforeend", `
+          <div class="fade-in bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div>
+                <h4 class="text-sm font-bold text-white">${item.type}</h4>
+                <p class="text-[10px] text-white/40">${item.date} • ${item.agendaTitle || "General"}</p>
+                <p class="text-[10px] text-white/30">By: ${item.createdBy || "Unknown"}</p>
+              </div>
+              <span class="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded-full font-bold uppercase">
+                Saved
+              </span>
+            </div>
+
+            <p class="text-xs text-white/70 leading-relaxed">${item.note}</p>
+            ${linkHtml}
+          </div>
+        `);
+      });
+    }
+
+    // ==========================================
+    // LOGOUT
+    // ==========================================
+    function logout() {
+      document.getElementById("logoutModal").classList.remove("hidden");
+      document.getElementById("logoutModal").classList.add("flex");
+    }
+
+    function closeLogoutModal() {
+      const modal = document.getElementById("logoutModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function confirmLogout() {
+      localStorage.removeItem("currentUser");
+
+      google.script.run
+        .withSuccessHandler(function(html) {
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .getLoginHtml();
+    }
+
+    function populateFeedbackBranchOptions() {
+      const select = document.getElementById("feedbackBranch");
+      if (!select) return;
+
+      select.innerHTML = `<option value="" disabled selected class="text-black">Loading branches...</option>`;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          select.innerHTML = `<option value="" disabled selected class="text-black">Select branch...</option>`;
+
+          if (!res || !res.success || !res.data || res.data.length === 0) {
+            select.innerHTML += `<option value="General" class="text-black">General</option>`;
+            return;
+          }
+
+          res.data.forEach(branch => {
+            select.innerHTML += `<option value="${branch}" class="text-black">${branch}</option>`;
+          });
+        })
+        .withFailureHandler(function(err) {
+          console.error("getBranchOptions error:", err);
+          select.innerHTML = `
+            <option value="" disabled selected class="text-black">Select branch...</option>
+            <option value="General" class="text-black">General</option>
+          `;
+        })
+        .getBranchOptions();
+    }
+
+    // ==========================================
+    // FILES / VAULT
+    // ==========================================
+    let vaultCategories = [];
+    let vaultFiles = [];
+    let activeVaultCategory = "All Files";
+
+    function loadVaultData() {
+      const grid = document.getElementById("vaultFilesGrid");
+      if (grid) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Loading files...
+          </div>
+        `;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.success) {
+            console.error("getVaultData failed:", res);
+            if (grid) {
+              grid.innerHTML = `
+                <div class="col-span-full text-center py-16 text-red-400 text-xs border border-dashed border-red-500/20 rounded-2xl">
+                  Failed to load files.
+                </div>
+              `;
+            }
+            return;
+          }
+
+          vaultCategories = res.categories || [];
+          vaultFiles = res.files || [];
+
+          renderVaultCategories();
+          renderVaultFiles();
+          populateCategoryDropdown();
+        })
+        .withFailureHandler(function(err) {
+          console.error("getVaultData error:", err);
+        })
+        .getVaultData();
+    }
+
+    function renderVaultCategories() {
+      const container = document.getElementById("vaultCategoriesList");
+      if (!container) return;
+
+      let html = "";
+
+      const allActive = activeVaultCategory === "All Files"
+        ? "bg-white text-black font-black"
+        : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+
+      html += `
+        <button onclick="setVaultCategory('All Files')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors ${allActive}">
+          All Files
+        </button>
+      `;
+
+      vaultCategories.forEach(cat => {
+        const isActive = activeVaultCategory === cat.name;
+
+        const style = isActive
+          ? "bg-blue-600 text-white font-black shadow-lg shadow-blue-600/30"
+          : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+
+        html += `
+          <button onclick="setVaultCategory('${escapeVaultValue(cat.name)}')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${style}">
+            ${cat.name}
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function setVaultCategory(catName) {
+      activeVaultCategory = catName;
+      renderVaultCategories();
+      renderVaultFiles();
+    }
+
+    function renderVaultFiles() {
+      const container = document.getElementById("vaultFilesGrid");
+      const searchInput = document.getElementById("vaultSearch");
+      if (!container) return;
+
+      const searchQ = searchInput ? searchInput.value.toLowerCase() : "";
+
+      container.innerHTML = "";
+      let foundCount = 0;
+
+      vaultFiles.forEach(file => {
+        const title = String(file.title || "");
+        const desc = String(file.desc || "");
+        const category = String(file.category || "");
+        const link = String(file.link || "");
+
+        const matchCat = activeVaultCategory === "All Files" || category === activeVaultCategory;
+        const matchSearch =
+          title.toLowerCase().includes(searchQ) ||
+          desc.toLowerCase().includes(searchQ) ||
+          category.toLowerCase().includes(searchQ);
+
+        if (!matchCat || !matchSearch) return;
+
+        foundCount++;
+
+        container.insertAdjacentHTML("beforeend", `
+          <div class="glass-panel p-4 rounded-2xl border border-white/5 hover:border-blue-500/50 hover:bg-white/5 transition-all group flex flex-col justify-between min-h-[155px]">
+            <div>
+              <div class="flex justify-between items-start mb-3">
+                <span class="bg-blue-500/20 text-blue-300 text-[8px] px-2 py-1 rounded font-black uppercase tracking-wider line-clamp-1 max-w-[75%]">
+                  ${category || "General"}
+                </span>
+
+                <a href="${link}" target="_blank" class="material-symbols-outlined text-[16px] text-white/50 hover:text-blue-300 transition-colors bg-black/40 p-1 rounded-md">
+                  open_in_new
+                </a>
+              </div>
+
+              <h4 class="font-bold text-white text-sm mb-1 leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors">
+                ${title || "Untitled File"}
+              </h4>
+
+              <p class="text-[10px] text-white/50 line-clamp-3 leading-relaxed">
+                ${desc || "No description provided."}
+              </p>
+            </div>
+          </div>
+        `);
+      });
+
+      if (foundCount === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No files found.
+          </div>
+        `;
+      }
+    }
+
+    function populateCategoryDropdown() {
+      const select = document.getElementById("newFileCategory");
+      if (!select) return;
+
+      select.innerHTML = "";
+
+      if (!vaultCategories.length) {
+        select.innerHTML = `<option value="General" class="text-black">General</option>`;
+        return;
+      }
+
+      vaultCategories.forEach(cat => {
+        select.innerHTML += `<option value="${cat.name}" class="text-black">${cat.name}</option>`;
+      });
+    }
+
+    function openAddFileModal() {
+      const modal = document.getElementById("addFileModal");
+      const content = document.getElementById("addFileContent");
+
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeAddFileModal() {
+      const modal = document.getElementById("addFileModal");
+      const content = document.getElementById("addFileContent");
+
+      modal.classList.add("opacity-0");
+      content.classList.add("scale-95");
+
+      setTimeout(() => {
+        modal.classList.add("hidden");
+        document.getElementById("formAddFile").reset();
+      }, 300);
+    }
+
+    const formAddFileEl = document.getElementById("formAddFile");
+    if (formAddFileEl) {
+      formAddFileEl.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById("btnSaveFile");
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = "Saving...";
+        btn.disabled = true;
+
+        const payload = {
+          title: document.getElementById("newFileTitle").value,
+          desc: document.getElementById("newFileDesc").value,
+          category: document.getElementById("newFileCategory").value,
+          link: document.getElementById("newFileLink").value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            if (!res || !res.success) {
+              alert("Failed to save file.");
+              return;
+            }
+
+            closeAddFileModal();
+            loadVaultData();
+          })
+          .withFailureHandler(function(err) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert("Error: " + err);
+          })
+          .addVaultFile(payload);
+      });
+    }
+
+    function escapeVaultValue(value) {
+      return String(value || "").replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
