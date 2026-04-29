@@ -9,6 +9,7 @@
   <script src="./api.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
   <script id="tailwind-config">
     tailwind.config = {
       darkMode: "class",
@@ -475,12 +476,14 @@
     document.addEventListener("DOMContentLoaded", () => {
       const userData = JSON.parse(localStorage.getItem("currentUser"));
 
-      document.getElementById("todayHeaderLabel").textContent = new Date().toDateString();
-
-      if (userData) {
-        document.getElementById("welcomeName").textContent = `Welcome, ${userData.username}`;
-        document.getElementById("userRole").textContent = `Branch: ${userData.branch || "-"} | Role: ${userData.role || "-"}`;
+      if (!userData) {
+        window.location.href = "index.html";
+        return;
       }
+
+      document.getElementById("todayHeaderLabel").textContent = new Date().toDateString();
+      document.getElementById("welcomeName").textContent = `Welcome, ${userData.username}`;
+      document.getElementById("userRole").textContent = `Branch: ${userData.branch || "-"} | Role: ${userData.role || "-"}`;
 
       const feedbackDate = document.getElementById("feedbackDate");
       if (feedbackDate) {
@@ -539,8 +542,8 @@
     // Reads Tasks sheet through Code.gs getAllManagerTasks()
     // ==========================================
     function loadSupervisorCalendarTasks() {
-      google.script.run
-        .withSuccessHandler(function(response) {
+      apiCall("getAllManagerTasks")
+        .then(function(response) {
           if (!response || !response.success) {
             console.error("getAllManagerTasks failed:", response);
             globalTasks = [];
@@ -558,16 +561,16 @@
           renderDailyActivities();
           populateFeedbackAgendaOptions();
         })
-        .withFailureHandler(function(error) {
+        .catch(function(error) {
           console.error("getAllManagerTasks error:", error);
           globalTasks = [];
           renderSummaryBadges();
           renderCalendar();
           renderDailyActivities();
           populateFeedbackAgendaOptions();
-        })
-        .getAllManagerTasks();
+        });
     }
+
 
 
 
@@ -821,7 +824,7 @@
       const payload = {
         date: document.getElementById("feedbackDate").value,
         type: document.getElementById("feedbackType").value,
-        agendaId: selectedAgendaId,
+        branchName: document.getElementById("feedbackBranch").value,
         agendaTitle: selectedAgenda ? selectedAgenda.title : "General",
         note: document.getElementById("feedbackNote").value,
         referenceLink: document.getElementById("feedbackLink").value,
@@ -832,8 +835,8 @@
       btn.innerHTML = "Saving...";
       btn.disabled = true;
 
-      google.script.run
-        .withSuccessHandler(function(res) {
+      apiCall("saveFeedback", payload)
+        .then(function(res) {
           btn.innerHTML = "Submit Feedback";
           btn.disabled = false;
 
@@ -847,13 +850,14 @@
           const form = document.getElementById("feedbackForm");
           form.reset();
           document.getElementById("feedbackDate").value = new Date().toISOString().split("T")[0];
+          populateFeedbackBranchOptions();
+          populateFeedbackAgendaOptions();
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
           btn.innerHTML = "Submit Feedback";
           btn.disabled = false;
           alert("Error: " + err);
-        })
-        .saveFeedback(payload);
+        });
     }
 
     function loadFeedbackList() {
@@ -872,8 +876,11 @@
         `;
       }
 
-      google.script.run
-        .withSuccessHandler(function(res) {
+      apiCall("getFeedbackList", {
+        filterDate: filterDate,
+        createdBy: createdBy
+      })
+        .then(function(res) {
           if (!res || !res.success) {
             console.error("getFeedbackList failed:", res);
             renderFeedbackList([]);
@@ -882,11 +889,10 @@
 
           renderFeedbackList(res.data || []);
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
           console.error("getFeedbackList error:", err);
           renderFeedbackList([]);
-        })
-        .getFeedbackList(filterDate, createdBy);
+        });
     }
 
     function clearFeedbackFilter() {
@@ -952,14 +958,7 @@
 
     function confirmLogout() {
       localStorage.removeItem("currentUser");
-
-      google.script.run
-        .withSuccessHandler(function(html) {
-          document.open();
-          document.write(html);
-          document.close();
-        })
-        .getLoginHtml();
+      window.location.href = "index.html";
     }
 
     function populateFeedbackBranchOptions() {
@@ -968,8 +967,8 @@
 
       select.innerHTML = `<option value="" disabled selected class="text-black">Loading branches...</option>`;
 
-      google.script.run
-        .withSuccessHandler(function(res) {
+      apiCall("getBranchOptions")
+        .then(function(res) {
           select.innerHTML = `<option value="" disabled selected class="text-black">Select branch...</option>`;
 
           if (!res || !res.success || !res.data || res.data.length === 0) {
@@ -981,14 +980,13 @@
             select.innerHTML += `<option value="${branch}" class="text-black">${branch}</option>`;
           });
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
           console.error("getBranchOptions error:", err);
           select.innerHTML = `
             <option value="" disabled selected class="text-black">Select branch...</option>
             <option value="General" class="text-black">General</option>
           `;
-        })
-        .getBranchOptions();
+        });
     }
 
     // ==========================================
@@ -1008,8 +1006,8 @@
         `;
       }
 
-      google.script.run
-        .withSuccessHandler(function(res) {
+      apiCall("getVaultData")
+        .then(function(res) {
           if (!res || !res.success) {
             console.error("getVaultData failed:", res);
             if (grid) {
@@ -1029,10 +1027,16 @@
           renderVaultFiles();
           populateCategoryDropdown();
         })
-        .withFailureHandler(function(err) {
+        .catch(function(err) {
           console.error("getVaultData error:", err);
-        })
-        .getVaultData();
+          if (grid) {
+            grid.innerHTML = `
+              <div class="col-span-full text-center py-16 text-red-400 text-xs border border-dashed border-red-500/20 rounded-2xl">
+                Connection error.
+              </div>
+            `;
+          }
+        });
     }
 
     function renderVaultCategories() {
@@ -1192,8 +1196,8 @@
           link: document.getElementById("newFileLink").value
         };
 
-        google.script.run
-          .withSuccessHandler(function(res) {
+        apiCall("addVaultFile", payload)
+          .then(function(res) {
             btn.innerHTML = originalText;
             btn.disabled = false;
 
@@ -1205,12 +1209,11 @@
             closeAddFileModal();
             loadVaultData();
           })
-          .withFailureHandler(function(err) {
+          .catch(function(err) {
             btn.innerHTML = originalText;
             btn.disabled = false;
             alert("Error: " + err);
-          })
-          .addVaultFile(payload);
+          });
       });
     }
 
