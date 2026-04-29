@@ -980,14 +980,7 @@
 
         function confirmLogout() {
           localStorage.removeItem("currentUser");
-
-          google.script.run
-            .withSuccessHandler(function(html) {
-              document.open();
-              document.write(html);
-              document.close();
-            })
-            .getLoginHtml();
+          window.location.href = "index.html";
         }
 
         // ==========================================
@@ -1009,8 +1002,8 @@
         };
 
         function fetchAllTasksAndRender() {
-          google.script.run
-            .withSuccessHandler(function(response) {
+          apiCall("getAllManagerTasks")
+            .then(function(response) {
               if (!response || !response.success) {
                 console.error("getAllManagerTasks failed:", response);
                 globalTasks = [];
@@ -1039,10 +1032,12 @@
               renderCalendar();
               renderDailyAgenda();
             })
-            .withFailureHandler(function(err) {
+            .catch(function(err) {
               console.error("getAllManagerTasks error:", err);
-            })
-            .getAllManagerTasks();
+              globalTasks = [];
+              renderCalendar();
+              renderDailyAgenda();
+            });
         }
 
         // ==========================================
@@ -1173,27 +1168,27 @@
         // Aksi mengubah status dari Dropdown
         function changeStatus(taskId, selectElement) {
             const newStatus = selectElement.value;
-            selectElement.disabled = true; // Kunci dropdown sementara proses
+            selectElement.disabled = true;
             selectElement.classList.add('opacity-50', 'cursor-wait');
 
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    if (!response || !response.success) {
-                        container.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Failed to load backlog.</div>';
-                        console.error("getLatestTasks failed:", response);
-                        return;
-                    }
-
-                    if(response.success) {
-                        // Refresh data agar sinkron
-                        fetchAllTasksAndRender();
-                        loadBacklogTasks(); 
-                    } else {
-                        alert(response.message);
-                        selectElement.disabled = false;
-                    }
-                })
-                .updateTaskStatusById(taskId, newStatus);
+            apiCall("updateTaskStatusById", {
+                taskId: taskId,
+                newStatus: newStatus
+            }).then(function(response) {
+                if (response && response.success) {
+                    fetchAllTasksAndRender();
+                    loadBacklogTasks();
+                } else {
+                    alert((response && response.message) || "Failed to update status.");
+                    selectElement.disabled = false;
+                    selectElement.classList.remove('opacity-50', 'cursor-wait');
+                }
+            }).catch(function(err) {
+                console.error("updateTaskStatusById error:", err);
+                alert("Connection error.");
+                selectElement.disabled = false;
+                selectElement.classList.remove('opacity-50', 'cursor-wait');
+            });
         }
 
         // Fungsi Navigasi Kalender
@@ -1260,11 +1255,16 @@
             assignee: document.getElementById('taskAssignee').value
           };
 
-          const runner = editingId
-            ? google.script.run.withSuccessHandler(handleTaskSave).updateManagerTask
-            : google.script.run.withSuccessHandler(handleTaskSave).assignNewTask;
+          const actionName = editingId ? "updateManagerTask" : "assignNewTask";
 
-          runner(payload);
+          apiCall(actionName, payload)
+            .then(handleTaskSave)
+            .catch(function(err) {
+              btn.innerHTML = '<span>Save Task</span>';
+              btn.disabled = false;
+              console.error(actionName + " error:", err);
+              alert("Connection error.");
+            });
 
           function handleTaskSave(response) {
             btn.innerHTML = '<span>Save Task</span>';
@@ -1290,59 +1290,67 @@
             const filterVal = document.getElementById('backlogFilter').value;
             container.innerHTML = '<div class="text-center py-10 text-white/40 text-xs flex justify-center"><span class="material-symbols-outlined animate-spin text-2xl">sync</span></div>';
 
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    if(response.success) {
-                        container.innerHTML = '';
-                        if(response.data.length === 0) {
-                            container.innerHTML = '<div class="text-center py-10 text-white/40 text-xs">No unexecuted tasks found.</div>'; return;
-                        }
-                        response.data.forEach(task => {
-                            const style = catStyles[task.category] ? catStyles[task.category].style : "bg-white/10 text-white/60 border-white/20";
-                            const linkHtml = task.link ? `<a href="${task.link}" target="_blank" class="hover:text-white transition-colors" title="Open Attachment"><span class="material-symbols-outlined text-[14px]">link</span></a>` : '';
-                            
-                            const assigneeInitials = getInitials(task.assignee); // Avatar Dinamis
-
-                            const html = `
-                            <div class="bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 p-3.5 rounded-xl transition-all cursor-pointer">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase ${style}">${task.category}</span>
-                                    <div class="flex items-center gap-2 text-white/50">
-                                        <span class="text-[10px] font-bold">${task.targetDate}</span>
-                                        ${linkHtml}
-                                    </div>
-                                </div>
-                                <h4 class="text-xs font-bold text-white mb-1">${task.title}</h4>
-                                <div class="flex justify-between items-end mt-2">
-                                    <span class="text-[9px] ${task.status === 'Pending' ? 'text-white/40' : 'text-green-400'} font-bold flex items-center gap-1">${task.status}</span>
-                                    
-                                    <div class="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[7px] font-bold text-white border border-white/20" title="${task.assignee}">
-                                        ${assigneeInitials}
-                                    </div>
-                                </div>
-                            </div>`;
-                            container.innerHTML += html;
-                        });
+            apiCall("getLatestTasks", {
+                filterCategory: filterVal
+            }).then(function(response) {
+                if(response && response.success) {
+                    container.innerHTML = '';
+                    if(response.data.length === 0) {
+                        container.innerHTML = '<div class="text-center py-10 text-white/40 text-xs">No unexecuted tasks found.</div>'; return;
                     }
-                })
-                .getLatestTasks(filterVal);
+                    response.data.forEach(task => {
+                        const style = catStyles[task.category] ? catStyles[task.category].style : "bg-white/10 text-white/60 border-white/20";
+                        const linkHtml = task.link ? `<a href="${task.link}" target="_blank" class="hover:text-white transition-colors" title="Open Attachment"><span class="material-symbols-outlined text-[14px]">link</span></a>` : '';
+
+                        const assigneeInitials = getInitials(task.assignee);
+
+                        const html = `
+                        <div class="bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 p-3.5 rounded-xl transition-all cursor-pointer">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase ${style}">${task.category}</span>
+                                <div class="flex items-center gap-2 text-white/50">
+                                    <span class="text-[10px] font-bold">${task.targetDate}</span>
+                                    ${linkHtml}
+                                </div>
+                            </div>
+                            <h4 class="text-xs font-bold text-white mb-1">${task.title}</h4>
+                            <div class="flex justify-between items-end mt-2">
+                                <span class="text-[9px] ${task.status === 'Pending' ? 'text-white/40' : 'text-green-400'} font-bold flex items-center gap-1">${task.status}</span>
+
+                                <div class="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[7px] font-bold text-white border border-white/20" title="${task.assignee}">
+                                    ${assigneeInitials}
+                                </div>
+                            </div>
+                        </div>`;
+                        container.innerHTML += html;
+                    });
+                } else {
+                    container.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Failed to load backlog.</div>';
+                    console.error("getLatestTasks failed:", response);
+                }
+            }).catch(function(err) {
+                container.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Connection error.</div>';
+                console.error("getLatestTasks error:", err);
+            });
         }
 
         // Start App
 
         // 1. Fetch Executors (Managers) dari Backend
         function fetchExecutors() {
-            google.script.run
-                .withSuccessHandler(function(response) {
+            apiCall("getExecutors")
+                .then(function(response) {
                     const select = document.getElementById('taskAssignee');
                     select.innerHTML = '<option value="" disabled selected class="text-black">Executed by...</option>';
-                    if(response.success) {
+                    if(response && response.success) {
                         response.data.forEach(name => {
                             select.innerHTML += `<option value="${name}" class="text-black">${name}</option>`;
                         });
                     }
                 })
-                .getExecutors();
+                .catch(function(err) {
+                    console.error("getExecutors error:", err);
+                });
         }
 
         // 3. Panggil fetchExecutors di awal loading
@@ -1374,22 +1382,24 @@
 
         // 1. Fetch data Supervisor dari Backend untuk Dropdown
         function fetchStrategyExecutors() {
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    const select = document.getElementById('strategyPicAssignee'); // Fix ID Element
+            apiCall("getStrategyExecutors")
+                .then(function(response) {
+                    const select = document.getElementById('strategyPicAssignee');
                     if (!select) return; 
-                    
+
                     select.innerHTML = '<option value="" disabled selected class="text-black">Select PIC...</option>';
-                    
-                    if(response.success) {
+
+                    if(response && response.success) {
                         response.data.forEach(name => {
                             select.innerHTML += `<option value="${name}" class="text-black">${name}</option>`;
                         });
                     } else {
-                        select.innerHTML = `<option value="" disabled class="text-red-500">Error: ${response.message}</option>`;
+                        select.innerHTML = `<option value="" disabled class="text-red-500">Error: ${(response && response.message) || "Failed to load PICs"}</option>`;
                     }
                 })
-                .getStrategyExecutors();
+                .catch(function(err) {
+                    console.error("getStrategyExecutors error:", err);
+                });
         }
 
         // Panggil fungsi ini saat dokumen selesai diload
@@ -1408,18 +1418,23 @@
                 category: document.getElementById('strategyType').value,
                 deadline: document.getElementById('strategyDeadline').value,
                 desc: document.getElementById('strategyDesc').value,
-                link: document.getElementById('strategyLink').value // <--- Link Include!
+                link: document.getElementById('strategyLink').value
             };
 
-            google.script.run
-                .withSuccessHandler(function(response) {
+            apiCall("assignNewStrategy", payload)
+                .then(function(response) {
                     btn.innerHTML = originalText; btn.disabled = false;
-                    if(response.success) {
+                    if(response && response.success) {
                         closeStrategyModal(); 
                         document.getElementById('newStrategyForm').reset(); 
-                        loadStrategies(); // AUTO REFRESH
-                    } else { alert("Gagal: " + response.message); }
-                }).assignNewStrategy(payload);
+                        loadStrategies();
+                    } else { alert("Gagal: " + ((response && response.message) || "Failed to deploy strategy.")); }
+                })
+                .catch(function(err) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    console.error("assignNewStrategy error:", err);
+                    alert("Connection error.");
+                });
         });
 
         // ==========================================
@@ -1428,14 +1443,16 @@
         let globalStrategies = [];
 
         function loadStrategies() {
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    if(response.success) {
+            apiCall("getAssignedStrategies")
+                .then(function(response) {
+                    if(response && response.success) {
                         globalStrategies = response.data;
                         renderKanbanBoard();
                     }
                 })
-                .getAssignedStrategies();
+                .catch(function(err) {
+                    console.error("getAssignedStrategies error:", err);
+                });
         }
 
         // Pastikan getInitials membersihkan tanda kurung, misal: "Andi (Paris)" -> "AN"
@@ -1544,20 +1561,25 @@
 
         function saveStrategyStatus() {
             const stratId = document.getElementById('viewStratId').value;
-            const newStatus = document.getElementById('viewStratStatus').value; // <-- FIXED
+            const newStatus = document.getElementById('viewStratStatus').value;
             const btn = document.getElementById('btnUpdateStrat');
-            
+
             btn.innerHTML = "Saving..."; btn.disabled = true;
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    btn.innerHTML = "Save"; btn.disabled = false;
-                    if(res.success) {
-                        closeViewStrategyModal();
-                        loadStrategies(); // Refresh Kanban
-                    } else { alert(res.message); }
-                })
-                .updateStrategyStatus(stratId, newStatus);
+            apiCall("updateStrategyStatus", {
+                stratId: stratId,
+                newStatus: newStatus
+            }).then(function(res) {
+                btn.innerHTML = "Save"; btn.disabled = false;
+                if(res && res.success) {
+                    closeViewStrategyModal();
+                    loadStrategies();
+                } else { alert((res && res.message) || "Failed to update strategy."); }
+            }).catch(function(err) {
+                btn.innerHTML = "Save"; btn.disabled = false;
+                console.error("updateStrategyStatus error:", err);
+                alert("Connection error.");
+            });
         }
 
         // Jalankan saat tab filter diganti
@@ -1584,38 +1606,40 @@
                 target: document.getElementById('kpiTarget').value,
                 weight: document.getElementById('kpiWeight').value,
                 notes: document.getElementById('kpiNotes').value,
-                deadline: document.getElementById('kpiDeadline').value // Tarik Tanggal
+                deadline: document.getElementById('kpiDeadline').value
             };
 
-            google.script.run
-                .withSuccessHandler(function(response) {
+            apiCall("deployLeadershipKPI", payload)
+                .then(function(response) {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
-                    if(response.success) {
+                    if(response && response.success) {
                         document.getElementById('kpiSetForm').reset(); 
-                        loadLeadershipKPIs(); // Refresh pilar UI
+                        loadLeadershipKPIs();
                     } else {
-                        alert("Failed: " + response.message);
+                        alert("Failed: " + ((response && response.message) || "Failed to deploy KPI."));
                     }
                 })
-                .withFailureHandler(function(err) {
+                .catch(function(err) {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
+                    console.error("deployLeadershipKPI error:", err);
                     alert("Connection error to server.");
-                })
-                .deployLeadershipKPI(payload);
+                });
         });
 
         // 2. Tarik Data KPI
         function loadLeadershipKPIs() {
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    if(response.success) {
+            apiCall("getLeadershipKPIs")
+                .then(function(response) {
+                    if(response && response.success) {
                         globalLeadershipKPIs = response.data;
                         renderKPIPillars();
                     }
                 })
-                .getLeadershipKPIs();
+                .catch(function(err) {
+                    console.error("getLeadershipKPIs error:", err);
+                });
         }
 
         // 3. Mesin Pembuat Kartu, Kalkulator Bobot & Filter
@@ -1720,17 +1744,23 @@
             selectElement.disabled = true;
             selectElement.classList.add('opacity-50');
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if(res.success) {
-                        loadLeadershipKPIs(); // Refresh Board
-                    } else {
-                        alert(res.message);
-                        selectElement.disabled = false;
-                        selectElement.classList.remove('opacity-50');
-                    }
-                })
-                .updateLeadershipKPIStatus(kpiId, newStatus);
+            apiCall("updateLeadershipKPIStatus", {
+                kpiId: kpiId,
+                newStatus: newStatus
+            }).then(function(res) {
+                if(res && res.success) {
+                    loadLeadershipKPIs();
+                } else {
+                    alert((res && res.message) || "Failed to update KPI.");
+                    selectElement.disabled = false;
+                    selectElement.classList.remove('opacity-50');
+                }
+            }).catch(function(err) {
+                console.error("updateLeadershipKPIStatus error:", err);
+                alert("Connection error.");
+                selectElement.disabled = false;
+                selectElement.classList.remove('opacity-50');
+            });
         }
 
         // ==========================================
@@ -1749,8 +1779,8 @@
             </div>
           `;
 
-          google.script.run
-            .withSuccessHandler(function(res) {
+          apiCall("getManagerFeedbackBranches")
+            .then(function(res) {
               if (!res || !res.success) {
                 grid.innerHTML = `
                   <div class="col-span-full text-center py-12 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-xl">
@@ -1763,15 +1793,14 @@
               managerFeedbackBranches = res.data || [];
               renderManagerFeedbackBranchGrid();
             })
-            .withFailureHandler(function(err) {
+            .catch(function(err) {
               console.error("getManagerFeedbackBranches error:", err);
               grid.innerHTML = `
                 <div class="col-span-full text-center py-12 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-xl">
                   Connection error.
                 </div>
               `;
-            })
-            .getManagerFeedbackBranches();
+            });
         }
 
         function renderManagerFeedbackBranchGrid() {
@@ -1864,7 +1893,7 @@
               Loading feedback...
             </div>
           `;
-          count.textContent = "0";
+          if (count) count.textContent = "0";
 
           const filters = {
             branchName: activeFeedbackBranch,
@@ -1873,8 +1902,8 @@
             year: document.getElementById("managerFeedbackYearFilter").value || "All"
           };
 
-          google.script.run
-            .withSuccessHandler(function(res) {
+          apiCall("getManagerFeedbackByBranch", filters)
+            .then(function(res) {
               if (!res || !res.success) {
                 console.error("getManagerFeedbackByBranch failed:", res);
                 renderManagerFeedbackList([]);
@@ -1883,11 +1912,10 @@
 
               renderManagerFeedbackList(res.data || []);
             })
-            .withFailureHandler(function(err) {
+            .catch(function(err) {
               console.error("getManagerFeedbackByBranch error:", err);
               renderManagerFeedbackList([]);
-            })
-            .getManagerFeedbackByBranch(filters);
+            });
         }
 
         function renderManagerFeedbackList(items) {
@@ -1957,17 +1985,21 @@
 
         // 1. Tarik Data Utama
         function loadVaultData() {
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if(res.success) {
-                        vaultCategories = res.categories;
-                        vaultFiles = res.files;
+            apiCall("getVaultData")
+                .then(function(res) {
+                    if(res && res.success) {
+                        vaultCategories = res.categories || [];
+                        vaultFiles = res.files || [];
                         renderVaultCategories();
                         renderVaultFiles();
                         populateCategoryDropdown();
+                    } else {
+                        console.error("getVaultData failed:", res);
                     }
                 })
-                .getVaultData();
+                .catch(function(err) {
+                    console.error("getVaultData error:", err);
+                });
         }
 
         // 2. Render Header Kategori (Pills)
@@ -2064,19 +2096,29 @@
             e.preventDefault();
             const btn = document.getElementById('btnSaveCat');
             btn.innerText = "Saving..."; btn.disabled = true;
-            
-            google.script.run.withSuccessHandler(function() {
+
+            apiCall("addVaultCategory", {
+                name: document.getElementById('newCatName').value
+            }).then(function(res) {
                 btn.innerText = "Save"; btn.disabled = false;
+                if (!res || !res.success) {
+                    alert((res && res.message) || "Failed to save category.");
+                    return;
+                }
                 closeAddCatModal();
-                loadVaultData(); // Refresh Data
-            }).addVaultCategory({ name: document.getElementById('newCatName').value });
+                loadVaultData();
+            }).catch(function(err) {
+                btn.innerText = "Save"; btn.disabled = false;
+                console.error("addVaultCategory error:", err);
+                alert("Connection error.");
+            });
         });
 
         document.getElementById('formAddFile').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSaveFile');
             btn.innerText = "Saving..."; btn.disabled = true;
-            
+
             const payload = {
                 title: document.getElementById('newFileTitle').value,
                 desc: document.getElementById('newFileDesc').value,
@@ -2084,11 +2126,21 @@
                 link: document.getElementById('newFileLink').value
             };
 
-            google.script.run.withSuccessHandler(function() {
-                btn.innerText = "Save File"; btn.disabled = false;
-                closeAddFileModal();
-                loadVaultData(); // Refresh Data
-            }).addVaultFile(payload);
+            apiCall("addVaultFile", payload)
+                .then(function(res) {
+                    btn.innerText = "Save File"; btn.disabled = false;
+                    if (!res || !res.success) {
+                        alert((res && res.message) || "Failed to save file.");
+                        return;
+                    }
+                    closeAddFileModal();
+                    loadVaultData();
+                })
+                .catch(function(err) {
+                    btn.innerText = "Save File"; btn.disabled = false;
+                    console.error("addVaultFile error:", err);
+                    alert("Connection error.");
+                });
         });
 
         // Trigger saat web awal dibuka
@@ -2130,26 +2182,30 @@
             const btn = document.getElementById('btnUpdateFile');
             const originalTxt = btn.innerText;
             btn.innerText = "Updating..."; btn.disabled = true;
-            
+
             const payload = {
-                oldTitle: document.getElementById('editFileOldTitle').value, // Untuk mencari baris di Sheets
+                oldTitle: document.getElementById('editFileOldTitle').value,
                 title: document.getElementById('editFileTitle').value,
                 desc: document.getElementById('editFileDesc').value,
                 category: document.getElementById('editFileCategory').value,
                 link: document.getElementById('editFileLink').value
             };
 
-            google.script.run
-                .withSuccessHandler(function(res) {
+            apiCall("editVaultFile", payload)
+                .then(function(res) {
                     btn.innerText = originalTxt; btn.disabled = false;
-                    if(res.success) {
+                    if(res && res.success) {
                         closeEditFileModal();
-                        loadVaultData(); // Refresh UI & Tarik data baru
+                        loadVaultData();
                     } else {
-                        alert("Error: " + res.message);
+                        alert("Error: " + ((res && res.message) || "Failed to update file."));
                     }
                 })
-                .editVaultFile(payload);
+                .catch(function(err) {
+                    btn.innerText = originalTxt; btn.disabled = false;
+                    console.error("editVaultFile error:", err);
+                    alert("Connection error.");
+                });
         });
 
         // ==========================================
@@ -2159,28 +2215,27 @@
 
         // 1. Load Data Profil & Struktur
         function loadWorkspaceProfile() {
-            // Set Loading state
             const nameEl = document.getElementById('wsUserName');
             const roleEl = document.getElementById('wsUserRole');
             if(nameEl) nameEl.innerText = "Loading...";
             if(roleEl) roleEl.innerText = "...";
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if(res.success) {
-                        // Display Data Diri (Tarik dari Auth Sheet)
+            apiCall("getWorkspaceProfile")
+                .then(function(res) {
+                    if(res && res.success) {
                         if(nameEl) nameEl.innerText = res.profile.name;
                         if(roleEl) roleEl.innerText = res.profile.role;
-                        
-                        // Render Struktur Organisasi
+
                         globalStaffList = res.staff;
                         renderOrgChart(res.staff);
                         populateParentDropdown(res.staff);
                     } else {
-                        console.error("Error loading workspace:", res.message);
+                        console.error("Error loading workspace:", res && res.message);
                     }
                 })
-                .getWorkspaceProfile();
+                .catch(function(err) {
+                    console.error("getWorkspaceProfile error:", err);
+                });
         }
 
         // 2. Render Visual Hirarki
@@ -2302,17 +2357,21 @@
                     parent: document.getElementById('staffParent').value
                 };
 
-                google.script.run
-                    .withSuccessHandler(function(res) {
+                apiCall("saveOrgStaff", payload)
+                    .then(function(res) {
                         btn.innerText = originalText; btn.disabled = false;
-                        if(res.success) {
+                        if(res && res.success) {
                             closeOrgModal();
-                            loadWorkspaceProfile(); // Refresh Data
+                            loadWorkspaceProfile();
                         } else {
-                            alert("Error: " + res.message);
+                            alert("Error: " + ((res && res.message) || "Failed to save staff."));
                         }
                     })
-                    .saveOrgStaff(payload); // Pastikan fungsi saveOrgStaff udah lu masukin di Code.gs kemaren
+                    .catch(function(err) {
+                        btn.innerText = originalText; btn.disabled = false;
+                        console.error("saveOrgStaff error:", err);
+                        alert("Connection error.");
+                    });
             });
         }
 
@@ -2396,24 +2455,25 @@
         document.addEventListener("DOMContentLoaded", () => {
           const userData = JSON.parse(localStorage.getItem('currentUser'));
 
-          if (userData) {
-            document.getElementById('welcomeName').textContent = `Welcome, ${userData.username}`;
-            document.getElementById('userRole').textContent = `Branch: ${userData.branch} | Role: ${userData.role}`;
+          if (!userData) {
+            window.location.href = "index.html";
+            return;
           }
 
-          if (typeof google !== 'undefined' && google.script) {
-            fetchAllTasksAndRender();
-            loadBacklogTasks();
-            fetchExecutors();
+          document.getElementById('welcomeName').textContent = `Welcome, ${userData.username}`;
+          document.getElementById('userRole').textContent = `Branch: ${userData.branch} | Role: ${userData.role}`;
 
-            fetchStrategyExecutors();
-            loadStrategies();
-            loadLeadershipKPIs();
+          fetchAllTasksAndRender();
+          loadBacklogTasks();
+          fetchExecutors();
 
-            loadManagerFeedbackBranches();
-            loadVaultData();
-            loadWorkspaceProfile();
-          }
+          fetchStrategyExecutors();
+          loadStrategies();
+          loadLeadershipKPIs();
+
+          loadManagerFeedbackBranches();
+          loadVaultData();
+          loadWorkspaceProfile();
         });
 
     </script>
