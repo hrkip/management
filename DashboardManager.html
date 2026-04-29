@@ -1,1229 +1,2481 @@
 <!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Kampung Inggris Pontianak - Supervisor Dashboard</title>
-
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script src="./api.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "secondary": "#b22b1d",
-            "primary": "#00003c",
-            "surface": "#fcf9f8",
-            "primary-container": "#000080"
-          },
-          fontFamily: {
-            "lexend": ["Lexend"],
-            "body-md": ["Lexend"]
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    body {
-      background-image: radial-gradient(circle at top right, #00003c 0%, #090b0c 100%);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .material-symbols-outlined {
-      font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
-    }
-
-    .calendar-day {
-      min-height: 72px;
-    }
-
-    .calendar-day:hover {
-      background: rgba(255,255,255,0.08);
-    }
-
-    .calendar-selected {
-      background: rgba(37, 99, 235, 0.85) !important;
-      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
-    }
-
-    .calendar-today {
-      border: 1px solid rgba(178, 43, 29, 0.8);
-    }
-
-    .dock-container::-webkit-scrollbar { display: none; }
-
-    .dock-item {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      transform-origin: bottom;
-    }
-
-    .dock-item:hover {
-      transform: scale(1.2) translateY(-8px);
-      z-index: 50;
-    }
-
-    .dock-item:active {
-      transform: scale(1.1) translateY(-4px);
-    }
-
-    .dock-active {
-      background-color: #1e3a8a;
-      color: white !important;
-      transform: translateY(-8px);
-      box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.4);
-    }
-
-    .tab-content {
-      display: none;
-      animation: fade-in 0.35s ease-out forwards;
-    }
-
-    .tab-active {
-      display: block;
-    }
-
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .fade-in {
-      animation: fade-in 0.35s ease-out forwards;
-    }
-  </style>
-</head>
-
-<body class="font-body-md text-white selection:bg-secondary/30 pb-28">
-
-  <header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-white/5 backdrop-blur-md shadow-sm border-b border-white/10">
-    <div class="flex items-center gap-3">
-      <div class="h-10 w-10 bg-primary-container rounded-lg flex items-center justify-center">
-        <span class="material-symbols-outlined text-white">school</span>
-      </div>
-      <div>
-        <h1 class="font-lexend font-bold text-lg text-white leading-tight">Kampung Inggris Pontianak</h1>
-        <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold">Supervisor Activity Board</p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-4">
-      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-white/80 text-sm">
-        <span class="material-symbols-outlined text-[18px]">event_available</span>
-        <span id="todayHeaderLabel">Today</span>
-      </div>
-
-      <button onclick="logout()" class="p-2 hover:bg-white/10 transition-colors rounded-full text-white active:scale-95" title="Logout">
-        <span class="material-symbols-outlined">logout</span>
-      </button>
-    </div>
-  </header>
-
-  <main class="pt-24 px-6 md:px-10 w-full max-w-[1600px] mx-auto">
-
-    <section class="mb-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
-        <div>
-          <h2 id="welcomeName" class="font-lexend text-3xl md:text-4xl font-bold text-white mb-2">Welcome</h2>
-          <p id="userRole" class="text-white/60 text-sm md:text-base">View assigned activities from management calendar.</p>
-        </div>
-
-        <div id="summaryBadges" class="flex flex-wrap gap-2">
-          <span class="bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-            Loading activities...
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <div id="tab-Activities" class="tab-content tab-active">
-      <section class="grid grid-cols-1 xl:grid-cols-12 gap-5 h-[calc(100vh-180px)] min-h-[680px]">
-
-        <div class="xl:col-span-8 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
-          <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-            <h3 id="calendarMonthYear" class="text-xl font-bold text-white font-lexend flex items-center gap-2">
-              <span class="material-symbols-outlined text-secondary text-2xl">calendar_month</span>
-              Loading...
-            </h3>
-
-            <div class="flex items-center gap-1">
-              <button onclick="changeMonth(-1)" class="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
-                <span class="material-symbols-outlined text-lg">chevron_left</span>
-              </button>
-
-              <button onclick="resetToToday()" class="px-4 py-2 rounded-full bg-white/10 text-white text-[11px] font-bold hover:bg-white/20 transition-colors">
-                TODAY
-              </button>
-
-              <button onclick="changeMonth(1)" class="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
-                <span class="material-symbols-outlined text-lg">chevron_right</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-white/40 tracking-widest">
-            <div>SUN</div>
-            <div>MON</div>
-            <div>TUE</div>
-            <div>WED</div>
-            <div>THU</div>
-            <div>FRI</div>
-            <div>SAT</div>
-          </div>
-
-          <div id="calendarGrid" class="grid grid-cols-7 gap-2 flex-grow content-stretch min-h-0">
-            <div class="col-span-7 text-center py-20 text-white/30 text-sm">Loading calendar...</div>
-          </div>
-        </div>
-
-        <div class="xl:col-span-4 glass-panel rounded-3xl p-5 flex flex-col min-h-0">
-          <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-            <div>
-              <h3 id="selectedDateLabel" class="text-lg font-bold text-white font-lexend flex items-center gap-2">
-                <span class="material-symbols-outlined text-blue-400">view_agenda</span>
-                Daily Activities
-              </h3>
-              <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">View only</p>
-            </div>
-
-            <span id="activityCountLabel" class="text-[10px] bg-white/10 px-2 py-1 rounded text-white/60 font-bold">
-              0 Items
-            </span>
-          </div>
-
-          <div id="dailyActivityContainer" class="flex-grow overflow-y-auto space-y-3 pr-2 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
-            <div class="text-center py-20 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-              Select a date to view activities.
-            </div>
-          </div>
-        </div>
-
-      </section>
-    </div>
-
-    <div id="tab-Feedback" class="tab-content">
-      <section class="glass-panel rounded-3xl p-6 min-h-[680px]">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5 mb-6 border-b border-white/10 pb-5">
-          <div>
-            <h2 class="font-lexend text-3xl font-bold text-white mb-2">Daily Feedback</h2>
-            <p class="text-white/60 text-sm">Write daily reports, agenda notes, obstacles, or suggested ideas.</p>
-          </div>
-
-          <span class="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-            Supervisor Notes
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 h-full min-h-[640px]">
-            <h3 class="font-bold text-white mb-4 flex items-center gap-2">
-              <span class="material-symbols-outlined text-blue-400">edit_note</span>
-              Submit Note
-            </h3>
-
-            <form id="feedbackForm" class="space-y-4">
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Date</label>
-                <input id="feedbackDate" type="date" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm [color-scheme:dark]">
-              </div>
-
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Type</label>
-                <select id="feedbackType" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
-                  <option value="Daily Report" class="text-black">Daily Report</option>
-                  <option value="Agenda Note" class="text-black">Agenda Note</option>
-                  <option value="Obstacle" class="text-black">Obstacle</option>
-                  <option value="Suggested Idea" class="text-black">Suggested Idea</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Branch Name</label>
-                <select id="feedbackBranch" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
-                  <option value="" disabled selected class="text-black">Select branch...</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Related Agenda</label>
-                <select id="feedbackAgenda" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm">
-                  <option value="" class="text-black">General / Not linked</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Reference Link Optional</label>
-                <input id="feedbackLink" type="url" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 text-sm" placeholder="https://drive.google.com/...">
-              </div>
-
-              <div>
-                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Notes</label>
-                <textarea id="feedbackNote" required rows="7" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 text-sm resize-none" placeholder="Write your report or idea here..."></textarea>
-              </div>
-
-              <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">send</span>
-                Submit Feedback
-              </button>
-            </form>
-          </div>
-
-          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col h-full min-h-[640px] overflow-hidden">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 border-b border-white/10 pb-4">
-              <h3 class="font-bold text-white flex items-center gap-2">
-                <span class="material-symbols-outlined text-orange-400">history</span>
-                Recent Notes
-              </h3>
-
-              <div class="flex items-center gap-2">
-                <input id="feedbackFilterDate" type="date" onchange="loadFeedbackList()" class="bg-black/20 border border-white/10 text-white rounded-lg py-1.5 px-2 outline-none focus:border-orange-500 text-xs [color-scheme:dark]">
-                <button type="button" onclick="clearFeedbackFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-lg text-white/60 font-bold">
-                  Clear
-                </button>
-              </div>
-            </div>
-
-            <div id="feedbackList" class="space-y-3 flex-grow overflow-y-auto pr-2 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
-              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-                No feedback submitted yet.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div id="tab-Files" class="tab-content">
-      <section class="glass-panel rounded-3xl p-6 min-h-[680px] flex flex-col">
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-5 border-b border-white/10 pb-5">
-          <div>
-            <h2 class="font-lexend text-3xl font-bold text-white mb-2">The Vault</h2>
-            <p class="text-white/60 text-sm">Access shared SOPs, documents, curriculum files, and reference links.</p>
-          </div>
-
-          <div class="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div class="relative flex-grow lg:w-80">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-[18px]">search</span>
-              <input type="text" id="vaultSearch" onkeyup="renderVaultFiles()" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 pl-9 pr-4 outline-none focus:border-blue-500 transition-all text-sm" placeholder="Search files...">
-            </div>
-
-            <button onclick="openAddFileModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 text-sm">
-              <span class="material-symbols-outlined text-[18px]">upload</span>
-              Store Link
-            </button>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 flex-shrink-0" style="scrollbar-width: none;" id="vaultCategoriesList">
-          <div class="text-xs text-white/50 italic">Loading categories...</div>
-        </div>
-
-        <div id="vaultFilesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
-          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            Loading files...
-          </div>
-        </div>
-      </section>
-    </div>
-
-  </main>
-
-  <div id="addFileModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="addFileContent">
-      <div class="flex justify-between items-center mb-5">
-        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
-          <span class="material-symbols-outlined text-blue-400">upload_file</span>
-          Store New File Link
-        </h3>
-
-        <button type="button" onclick="closeAddFileModal()" class="text-white/50 hover:text-white transition-colors">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      <form id="formAddFile" class="space-y-4">
-        <div>
-          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">File Title</label>
-          <input type="text" id="newFileTitle" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. SOP Kelas Speaking">
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
-          <select id="newFileCategory" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm appearance-none cursor-pointer">
-            <option value="" disabled selected class="text-black">Loading categories...</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Google Drive / Document Link</label>
-          <input type="url" id="newFileLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="https://drive.google.com/...">
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Short Description</label>
-          <textarea id="newFileDesc" rows="3" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm resize-none" placeholder="Brief details about this file..."></textarea>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
-          <button type="button" onclick="closeAddFileModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">
-            Cancel
-          </button>
-          <button type="submit" id="btnSaveFile" class="bg-blue-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-blue-500 shadow-lg shadow-blue-600/20">
-            Save File
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
-    <div class="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl mx-auto flex items-end px-3 py-2 gap-3 dock-container pointer-events-auto">
-
-      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Activities')">
-        <button id="btn-Activities" class="text-white bg-blue-900 rounded-xl p-2.5 shadow-lg dock-active transition-all duration-300 pointer-events-none">
-          <span class="material-symbols-outlined text-[20px]">calendar_month</span>
-        </button>
-        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-100 transition-opacity">Activities</span>
-      </div>
-
-      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Feedback')">
-        <button id="btn-Feedback" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
-          <span class="material-symbols-outlined text-[20px]">rate_review</span>
-        </button>
-        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Feedback</span>
-      </div>
-
-      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Files')">
-        <button id="btn-Files" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
-          <span class="material-symbols-outlined text-[20px]">folder_open</span>
-        </button>
-        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Files</span>
-      </div>
-
-    </div>
-  </nav>
-
-  <div id="logoutModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[9999]">
-    <div class="bg-white rounded-xl p-6 w-[300px] text-center shadow-2xl">
-      <h3 class="text-gray-800 font-bold text-lg mb-2">Confirm Logout</h3>
-      <p class="text-gray-500 text-sm mb-5">Are you sure you want to logout?</p>
-
-      <div class="flex justify-center gap-3">
-        <button onclick="closeLogoutModal()" class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">
-          Cancel
-        </button>
-        <button onclick="confirmLogout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600">
-          Logout
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ==========================================
-    // GLOBAL STATE
-    // ==========================================
-    let globalTasks = [];
-    let currentDate = new Date();
-    let currentMonth = currentDate.getMonth();
-    let currentYear = currentDate.getFullYear();
-    let selectedDateStr = currentDate.toDateString();
-
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-
-    const catStyles = {
-      "Program": {
-        dot: "bg-orange-400",
-        chip: "bg-orange-500/20 text-orange-300 border-orange-500/30"
-      },
-      "Meeting": {
-        dot: "bg-blue-400",
-        chip: "bg-blue-500/20 text-blue-300 border-blue-500/30"
-      },
-      "Event": {
-        dot: "bg-pink-400",
-        chip: "bg-pink-500/20 text-pink-300 border-pink-500/30"
-      },
-      "Curriculum": {
-        dot: "bg-purple-400",
-        chip: "bg-purple-500/20 text-purple-300 border-purple-500/30"
-      },
-      "Maintenance": {
-        dot: "bg-green-400",
-        chip: "bg-green-500/20 text-green-300 border-green-500/30"
-      }
-    };
-
-    // ==========================================
-    // INIT
-    // ==========================================
-    document.addEventListener("DOMContentLoaded", () => {
-      const userData = JSON.parse(localStorage.getItem("currentUser"));
-
-      document.getElementById("todayHeaderLabel").textContent = new Date().toDateString();
-
-      if (!userData) {
-        window.location.href = "index.html";
-        return;
-      }
-
-      document.getElementById("welcomeName").textContent = `Welcome, ${userData.username}`;
-      document.getElementById("userRole").textContent = `Branch: ${userData.branch || "-"} | Role: ${userData.role || "-"}`;
-
-      const feedbackDate = document.getElementById("feedbackDate");
-      if (feedbackDate) {
-        feedbackDate.value = new Date().toISOString().split("T")[0];
-      }
-
-      const feedbackForm = document.getElementById("feedbackForm");
-      if (feedbackForm) {
-        feedbackForm.addEventListener("submit", handleFeedbackSubmit);
-      }
-
-      populateFeedbackBranchOptions();
-      loadSupervisorCalendarTasks();
-      loadFeedbackList();
-      loadVaultData();
-    });
-
-    // ==========================================
-    // TABS
-    // ==========================================
-    const tabs = ["Activities", "Feedback", "Files"];
-
-    function switchTab(activeTabName) {
-      tabs.forEach(tab => {
-        const contentEl = document.getElementById(`tab-${tab}`);
-        const btnEl = document.getElementById(`btn-${tab}`);
-
-        if (contentEl) {
-          if (tab === activeTabName) {
-            contentEl.classList.add("tab-active");
-          } else {
-            contentEl.classList.remove("tab-active");
-          }
-        }
-
-        if (btnEl) {
-          const labelEl = btnEl.nextElementSibling;
-
-          if (tab === activeTabName) {
-            btnEl.classList.add("dock-active", "bg-blue-900");
-            btnEl.classList.remove("text-white/60", "bg-transparent");
-            labelEl.classList.add("opacity-100");
-            labelEl.classList.remove("opacity-0");
-          } else {
-            btnEl.classList.remove("dock-active", "bg-blue-900");
-            btnEl.classList.add("text-white/60", "bg-transparent");
-            labelEl.classList.remove("opacity-100");
-            labelEl.classList.add("opacity-0");
-          }
-        }
-      });
-    }
-
-    // ==========================================
-    // DATA SOURCE: SAME AS MANAGER CALENDAR
-    // Reads Tasks sheet through Code.gs getAllManagerTasks()
-    // ==========================================
-    function loadSupervisorCalendarTasks() {
-      apiCall("getAllManagerTasks")
-        .then(function(response) {
-          if (!response || !response.success) {
-            console.error("getAllManagerTasks failed:", response);
-            globalTasks = [];
-            renderSummaryBadges();
-            renderCalendar();
-            renderDailyActivities();
-            populateFeedbackAgendaOptions();
-            return;
-          }
-
-          globalTasks = (response.data || []).map(normalizeTask).filter(t => t.targetDate);
-
-          renderSummaryBadges();
-          renderCalendar();
-          renderDailyActivities();
-          populateFeedbackAgendaOptions();
-        })
-        .catch(function(error) {
-          console.error("getAllManagerTasks error:", error);
-          globalTasks = [];
-          renderSummaryBadges();
-          renderCalendar();
-          renderDailyActivities();
-          populateFeedbackAgendaOptions();
-        });
-    }
-
-
-
-    function normalizeTask(task) {
-      const rawDate = task.targetDate || task.date || task.deadline || task.dateValue || "";
-      const parsedDate = rawDate ? new Date(rawDate) : null;
-      const isValidDate = parsedDate && !isNaN(parsedDate);
-
-      return {
-        id: String(task.id || task.rowId || ""),
-        title: String(task.title || "Untitled Activity"),
-        category: String(task.category || "Program"),
-        status: String(task.status || "Pending"),
-        assignee: String(task.assignee || task.spv || "Unassigned"),
-        link: String(task.link || task.links || task.docLink || ""),
-        notes: String(task.notes || task.desc || ""),
-        targetDate: isValidDate ? parsedDate.toDateString() : "",
-        dateValue: isValidDate ? parsedDate.toISOString().split("T")[0] : ""
-      };
-    }
-
-    // ==========================================
-    // SUMMARY
-    // ==========================================
-    function renderSummaryBadges() {
-      const wrap = document.getElementById("summaryBadges");
-      const total = globalTasks.length;
-      const today = globalTasks.filter(t => t.targetDate === new Date().toDateString()).length;
-      const pending = globalTasks.filter(t => t.status === "Pending").length;
-
-      wrap.innerHTML = `
-        <span class="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-          ${total} Total Activities
-        </span>
-        <span class="bg-orange-500/20 border border-orange-500/30 text-orange-300 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-          ${today} Today
-        </span>
-        <span class="bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-          ${pending} Pending
-        </span>
-      `;
-    }
-
-    // ==========================================
-    // CALENDAR
-    // ==========================================
-    function renderCalendar() {
-      const monthLabel = document.getElementById("calendarMonthYear");
-      const calendarGrid = document.getElementById("calendarGrid");
-
-      monthLabel.innerHTML = `
-        <span class="material-symbols-outlined text-secondary text-2xl">calendar_month</span>
-        ${monthNames[currentMonth]} ${currentYear}
-      `;
-
-      calendarGrid.innerHTML = "";
-
-      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-      for (let i = firstDay; i > 0; i--) {
-        calendarGrid.innerHTML += `
-          <div class="calendar-day rounded-2xl bg-white/[0.02] text-white/20 p-3 text-sm">
-            ${daysInPrevMonth - i + 1}
-          </div>
-        `;
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const iterDate = new Date(currentYear, currentMonth, day);
-        const iterDateStr = iterDate.toDateString();
-        const isToday = iterDateStr === new Date().toDateString();
-        const isSelected = iterDateStr === selectedDateStr;
-        const tasksToday = globalTasks.filter(t => t.targetDate === iterDateStr);
-
-        let classes = "calendar-day rounded-2xl bg-white/[0.03] p-3 cursor-pointer transition-all border border-white/5 flex flex-col justify-between ";
-        if (isSelected) classes += "calendar-selected ";
-        else if (isToday) classes += "calendar-today ";
-
-        let dotsHtml = "";
-        if (tasksToday.length > 0) {
-          dotsHtml = `<div class="flex gap-1 flex-wrap mt-2">`;
-          tasksToday.slice(0, 5).forEach(t => {
-            const dotClass = catStyles[t.category] ? catStyles[t.category].dot : "bg-white";
-            dotsHtml += `<span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>`;
-          });
-          if (tasksToday.length > 5) {
-            dotsHtml += `<span class="text-[9px] text-white/50 leading-none">+${tasksToday.length - 5}</span>`;
-          }
-          dotsHtml += `</div>`;
-        }
-
-        const countHtml = tasksToday.length > 0
-          ? `<span class="text-[9px] bg-black/30 px-1.5 py-0.5 rounded-full text-white/70 font-bold">${tasksToday.length}</span>`
-          : "";
-
-        calendarGrid.innerHTML += `
-          <div class="${classes}" onclick="selectDate(${currentYear}, ${currentMonth}, ${day})">
-            <div class="flex justify-between items-start">
-              <span class="text-sm font-bold ${isSelected ? 'text-white' : 'text-white/80'}">${day}</span>
-              ${countHtml}
-            </div>
-            ${dotsHtml}
-          </div>
-        `;
-      }
-    }
-
-    function selectDate(year, month, day) {
-      selectedDateStr = new Date(year, month, day).toDateString();
-      renderCalendar();
-      renderDailyActivities();
-    }
-
-    function changeMonth(offset) {
-      currentMonth += offset;
-
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      } else if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
-
-      renderCalendar();
-      renderDailyActivities();
-    }
-
-    function resetToToday() {
-      const now = new Date();
-      currentMonth = now.getMonth();
-      currentYear = now.getFullYear();
-      selectedDateStr = now.toDateString();
-
-      renderCalendar();
-      renderDailyActivities();
-    }
-
-    // ==========================================
-    // DAILY ACTIVITIES
-    // ==========================================
-    function renderDailyActivities() {
-      const container = document.getElementById("dailyActivityContainer");
-      const countLabel = document.getElementById("activityCountLabel");
-      const dateLabel = document.getElementById("selectedDateLabel");
-
-      const selected = new Date(selectedDateStr);
-      dateLabel.innerHTML = `
-        <span class="material-symbols-outlined text-blue-400">view_agenda</span>
-        ${monthNames[selected.getMonth()].substring(0, 3)} ${selected.getDate()}, ${selected.getFullYear()}
-      `;
-
-      const tasksToday = globalTasks.filter(t => t.targetDate === selectedDateStr);
-      countLabel.textContent = `${tasksToday.length} Items`;
-
-      if (tasksToday.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-20 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            No activities scheduled for this date.
-          </div>
-        `;
-        return;
-      }
-
-      let html = "";
-
-      tasksToday.forEach(task => {
-        const style = catStyles[task.category]
-          ? catStyles[task.category].chip
-          : "bg-white/10 text-white/60 border-white/20";
-
-        const links = task.link
-          ? task.link.split(",").map((url, index) => {
-              const cleanUrl = url.trim();
-              if (!cleanUrl) return "";
-              return `
-                <a href="${cleanUrl}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[12px]">link</span>
-                  Link ${index + 1}
-                </a>
-              `;
-            }).join("")
-          : "";
-
-        html += `
-          <div class="fade-in bg-white/5 border border-white/10 p-4 rounded-2xl hover:border-white/20 transition-all">
-            <div class="flex justify-between items-start gap-3 mb-2">
-              <div>
-                <h4 class="text-sm font-bold text-white leading-snug">${task.title}</h4>
-                <p class="text-[10px] text-white/45 mt-1">
-                  Assigned to: <span class="text-white/70 font-bold">${task.assignee}</span>
-                </p>
-              </div>
-
-              <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${style}">
-                ${task.category}
-              </span>
-            </div>
-
-            ${task.notes ? `
-              <p class="text-[11px] text-white/55 leading-relaxed bg-black/20 border border-white/5 p-2 rounded-xl mb-3">
-                ${task.notes}
-              </p>
-            ` : ""}
-
-            <div class="flex justify-between items-center gap-3 pt-3 border-t border-white/10">
-              <span class="text-[10px] ${task.status === "Done" || task.status === "Completed" ? "text-green-400" : "text-orange-400"} font-bold uppercase">
-                ${task.status}
-              </span>
-
-              <div class="flex flex-wrap gap-2 justify-end">
-                ${links || `<span class="text-[10px] text-white/30">No links attached</span>`}
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    // ==========================================
-    // FEEDBACK UI ONLY
-    // Backend save can be added later.
-    // ==========================================
-    function populateFeedbackAgendaOptions() {
-      const select = document.getElementById("feedbackAgenda");
-      if (!select) return;
-
-      select.innerHTML = `<option value="" class="text-black">General / Not linked</option>`;
-
-      globalTasks.forEach(task => {
-        select.innerHTML += `
-          <option value="${task.id}" class="text-black">
-            ${task.dateValue} - ${task.title}
-          </option>
-        `;
-      });
-    }
-
-    function handleFeedbackSubmit(e) {
-      e.preventDefault();
-
-      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
-
-      const selectedAgendaId = document.getElementById("feedbackAgenda").value;
-      const selectedAgenda = globalTasks.find(t => String(t.id) === String(selectedAgendaId));
-
-      const payload = {
-        date: document.getElementById("feedbackDate").value,
-        type: document.getElementById("feedbackType").value,
-        branchName: document.getElementById("feedbackBranch").value,
-        agendaTitle: selectedAgenda ? selectedAgenda.title : "General",
-        note: document.getElementById("feedbackNote").value,
-        referenceLink: document.getElementById("feedbackLink").value,
-        createdBy: userData.username || "Unknown"
-      };
-
-      const btn = document.querySelector('#feedbackForm button[type="submit"]');
-      const originalBtn = btn.innerHTML;
-
-      btn.innerHTML = "Saving...";
-      btn.disabled = true;
-
-      apiCall("saveFeedback", payload)
-        .then(function(res) {
-          btn.innerHTML = originalBtn;
-          btn.disabled = false;
-
-          if (!res || !res.success) {
-            alert("Failed to save feedback");
-            return;
-          }
-
-          loadFeedbackList();
-
-          const form = document.getElementById("feedbackForm");
-          form.reset();
-          document.getElementById("feedbackDate").value = new Date().toISOString().split("T")[0];
-          populateFeedbackBranchOptions();
-          populateFeedbackAgendaOptions();
-        })
-        .catch(function(err) {
-          btn.innerHTML = originalBtn;
-          btn.disabled = false;
-          console.error("saveFeedback error:", err);
-          alert("Connection error.");
-        });
-    }
-
-    function loadFeedbackList() {
-      const filterInput = document.getElementById("feedbackFilterDate");
-      const filterDate = filterInput ? filterInput.value : "";
-
-      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
-      const createdBy = userData.username || "Unknown";
-
-      const list = document.getElementById("feedbackList");
-      if (list) {
-        list.innerHTML = `
-          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            Loading your feedback...
-          </div>
-        `;
-      }
-
-      apiCall("getFeedbackList", {
-        filterDate: filterDate,
-        createdBy: createdBy
-      })
-        .then(function(res) {
-          if (!res || !res.success) {
-            console.error("getFeedbackList failed:", res);
-            renderFeedbackList([]);
-            return;
-          }
-
-          renderFeedbackList(res.data || []);
-        })
-        .catch(function(err) {
-          console.error("getFeedbackList error:", err);
-          renderFeedbackList([]);
-        });
-    }
-
-    function clearFeedbackFilter() {
-      document.getElementById("feedbackFilterDate").value = "";
-      loadFeedbackList();
-    }
-
-    function renderFeedbackList(items) {
-      const list = document.getElementById("feedbackList");
-
-      if (!items.length) {
-        list.innerHTML = `
-          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            No feedback found.
-          </div>
-        `;
-        return;
-      }
-
-      list.innerHTML = "";
-
-      items.forEach(item => {
-        const linkHtml = item.referenceLink
-          ? `<a href="${item.referenceLink}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1 mt-2">
-              <span class="material-symbols-outlined text-[12px]">link</span>
-              Reference Link
-            </a>`
-          : "";
-
-        list.insertAdjacentHTML("beforeend", `
-          <div class="fade-in bg-white/5 border border-white/10 p-4 rounded-2xl">
-            <div class="flex justify-between items-start gap-3 mb-2">
-              <div>
-                <h4 class="text-sm font-bold text-white">${item.type}</h4>
-                <p class="text-[10px] text-white/40">${item.date} • ${item.branchName || "No Branch"}</p>
-                <p class="text-[10px] text-white/30">Agenda: ${item.agendaTitle || "General"}</p>
-                <p class="text-[10px] text-white/30">By: ${item.createdBy || "Unknown"}</p>
-              </div>
-              <span class="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded-full font-bold uppercase">
-                Saved
-              </span>
-            </div>
-
-            <p class="text-xs text-white/70 leading-relaxed">${item.note}</p>
-            ${linkHtml}
-          </div>
-        `);
-      });
-    }
-
-    // ==========================================
-    // LOGOUT
-    // ==========================================
-    function logout() {
-      document.getElementById("logoutModal").classList.remove("hidden");
-      document.getElementById("logoutModal").classList.add("flex");
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById("logoutModal");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-
-    function confirmLogout() {
-      localStorage.removeItem("currentUser");
-      window.location.href = "index.html";
-    }
-
-    function populateFeedbackBranchOptions() {
-      const select = document.getElementById("feedbackBranch");
-      if (!select) return;
-
-      select.innerHTML = `<option value="" disabled selected class="text-black">Loading branches...</option>`;
-
-      apiCall("getBranchOptions")
-        .then(function(res) {
-          select.innerHTML = `<option value="" disabled selected class="text-black">Select branch...</option>`;
-
-          if (!res || !res.success || !res.data || res.data.length === 0) {
-            select.innerHTML += `<option value="General" class="text-black">General</option>`;
-            return;
-          }
-
-          res.data.forEach(branch => {
-            select.innerHTML += `<option value="${branch}" class="text-black">${branch}</option>`;
-          });
-        })
-        .catch(function(err) {
-          console.error("getBranchOptions error:", err);
-          select.innerHTML = `
-            <option value="" disabled selected class="text-black">Select branch...</option>
-            <option value="General" class="text-black">General</option>
-          `;
-        });
-    }
-
-    // ==========================================
-    // FILES / VAULT
-    // ==========================================
-    let vaultCategories = [];
-    let vaultFiles = [];
-    let activeVaultCategory = "All Files";
-
-    function loadVaultData() {
-      const grid = document.getElementById("vaultFilesGrid");
-      if (grid) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            Loading files...
-          </div>
-        `;
-      }
-
-      apiCall("getVaultData")
-        .then(function(res) {
-          if (!res || !res.success) {
-            console.error("getVaultData failed:", res);
-            if (grid) {
-              grid.innerHTML = `
-                <div class="col-span-full text-center py-16 text-red-400 text-xs border border-dashed border-red-500/20 rounded-2xl">
-                  Failed to load files.
-                </div>
-              `;
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Manager Workspace - Kampung Inggris Pontianak</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="./api.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary": "#b22b1d",
+                        "primary": "#00003c",
+                        "surface": "#fcf9f8",
+                        "primary-container": "#000080",
+                    },
+                    fontFamily: {
+                        "lexend": ["Lexend"],
+                        "body-md": ["Lexend"]
+                    }
+                }
             }
-            return;
-          }
+        }
+    </script>
+    <style>
+        body {
+            background-image: radial-gradient(circle at top right, #00003c 0%, #090b0c 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
 
-          vaultCategories = res.categories || [];
-          vaultFiles = res.files || [];
+        /* MacOS Dock Animations */
+        .dock-container::-webkit-scrollbar { display: none; }
+        .dock-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: bottom; }
+        .dock-item:hover { transform: scale(1.2) translateY(-8px); z-index: 50; }
+        .dock-item:active { transform: scale(1.1) translateY(-4px); }
+        .dock-active { background-color: #1e3a8a; color: white !important; transform: translateY(-8px); box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.4); }
+        
+        .tab-content { display: none; animation: fade-in 0.4s ease-out forwards; }
+        .tab-active { display: block; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-body-md text-white selection:bg-secondary/30 pb-24">
 
-          renderVaultCategories();
-          renderVaultFiles();
-          populateCategoryDropdown();
-        })
-        .catch(function(err) {
-          console.error("getVaultData error:", err);
-          if (grid) {
-            grid.innerHTML = `
-              <div class="col-span-full text-center py-16 text-red-400 text-xs border border-dashed border-red-500/20 rounded-2xl">
-                Connection error.
+    <header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-white/5 backdrop-blur-md shadow-sm border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 bg-secondary rounded-lg flex items-center justify-center">
+                <span class="material-symbols-outlined text-white" data-icon="assignment">assignment</span>
+            </div>
+            <h1 class="font-lexend font-bold text-lg text-white">Manager Workspace</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-1 px-3 py-1.5 glass-panel rounded-full text-white/80 text-sm cursor-pointer hover:bg-white/10 transition-colors">
+                <span class="material-symbols-outlined text-[18px]" data-icon="notifications">notifications</span>
+                <span>3 Alerts</span>
+            </div>
+              <button onclick="logout()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs hover:bg-red-500 hover:text-white transition-all">
+                Logout
+              </button>
+        </div>
+    </header>
+
+    <main class="pt-24 px-6 md:px-10 w-full max-w-[1600px] mx-auto">
+        <div id="tab-Dashboard" class="tab-content tab-active">
+            <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+                
+                <section class="mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div>
+                            <h2 id="welcomeName" class="font-display-lg text-4xl font-bold text-white mb-2">Welcome, Admin</h2>
+                            <p id="userRole" class="font-body-lg text-lg text-white/60 max-w-2xl">Monitor academic performance and coordinate institutional strategies from your centralized mission control.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="bg-secondary px-6 py-2.5 rounded-lg text-white font-label-md flex items-center gap-2 hover:opacity-90 transition-all hover:shadow-lg hover:shadow-secondary/20 hover:-translate-y-0.5">
+                                <span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                                Launch Strategy
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex-grow glass-panel rounded-3xl p-8 flex flex-col min-h-0 relative">
+                    <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4 flex-shrink-0">
+                        <h3 class="text-xl font-bold text-white font-lexend flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-400">account_tree</span> Org Structure Editor
+                        </h3>
+                        <button onclick="openOrgModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all">
+                            <span class="material-symbols-outlined text-[18px]">person_add</span> Manage Staff
+                        </button>
+                    </div>
+
+                    <div id="orgChart" class="flex-grow overflow-auto p-4 flex justify-center items-start min-h-0 bg-black/20 rounded-2xl border border-white/5">
+                        <div class="text-center py-20 text-white/20 italic">Generating organization tree...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-Tasks" class="tab-content">
+            <style>
+              .calendar-zoomed {
+                display: flex !important;
+                gap: 1rem;
+              }
+
+              .calendar-zoomed #leftWrapper {
+                width: 100%;
+                display: flex !important;
+                flex-direction: row !important;
+              }
+
+              .calendar-zoomed #topRow {
+                width: 65%;
+                display: block !important;
+              }
+
+              .calendar-zoomed #calPanel {
+                height: 100%;
+                min-height: 650px;
+              }
+
+              .calendar-zoomed #formPanel {
+                display: none !important;
+              }
+
+              .calendar-zoomed #agendaPanel {
+                width: 35%;
+                height: 100%;
+                margin-top: 0 !important;
+              }
+
+              .calendar-zoomed #rightWrapper {
+                display: none !important;
+              }
+            </style>
+
+            <section class="mb-4 flex-shrink-0">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+                    <div>
+                        <h2 class="font-lexend text-3xl font-bold text-white mb-1">Tasks Workspace</h2>
+                        <p class="text-white/60 text-sm">Manage timelines, quick-assign tasks, and monitor backlogs.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div id="mainTasksGrid" class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-220px)] min-h-[650px] transition-all duration-500">
+                
+                <div id="leftWrapper" class="lg:col-span-8 flex flex-col gap-4 h-full transition-all duration-500">
+                    
+                    <div id="topRow" class="grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-500">
+                
+                        <div id="calPanel" class="glass-panel rounded-3xl p-5 flex flex-col h-full justify-between transition-all duration-500 relative">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 id="calendarMonthYear" class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary text-2xl" data-icon="calendar_month">calendar_month</span>
+                                    Loading...
+                                </h3>
+                                <div class="flex gap-1 items-center">
+                                    <button onclick="changeMonth(-1)" class="p-1 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
+                                        <span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+                                    </button>
+                                    <button onclick="resetToToday()" class="px-3 py-1 rounded-full bg-white/10 text-white text-[10px] font-bold hover:bg-white/20 transition-colors">
+                                        TODAY
+                                    </button>
+                                    <button onclick="changeMonth(1)" class="p-1 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors">
+                                        <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+                                    </button>
+                                    <div class="w-[1px] h-4 bg-white/20 mx-1"></div>
+                                    <button onclick="toggleCalendarZoom()" class="p-1 bg-blue-500/20 border border-blue-500/50 hover:bg-blue-500 rounded-full text-blue-400 hover:text-white transition-colors shadow-lg" title="Zoom Calendar">
+                                        <span class="material-symbols-outlined text-sm" id="zoomIcon">zoom_out_map</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] font-bold text-white/40 tracking-widest">
+                                <div>SU</div><div>MO</div><div>TU</div><div>WE</div><div>TH</div><div>FR</div><div>SA</div>
+                            </div>
+                            <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center font-body-md text-xs flex-grow content-between"></div>
+                        </div>
+
+                        <div id="formPanel" class="glass-panel rounded-3xl p-5 h-full relative overflow-hidden flex flex-col justify-between transition-all duration-500">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-secondary/20 blur-[50px] rounded-full pointer-events-none"></div>
+
+                            <h3 class="text-sm font-bold text-white mb-3 font-lexend flex items-center gap-1.5 border-b border-white/10 pb-2">
+                                <span class="material-symbols-outlined text-secondary text-[18px]" data-icon="bolt">bolt</span>
+                                Quick Action
+                            </h3>
+
+                            <form id="inlineTaskForm" class="space-y-3 flex-grow flex flex-col justify-between z-10">
+                                <div>
+                                    <input type="text" id="taskTitle" placeholder="Task title..." required class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs placeholder:text-white/30">
+                                </div>
+                                
+                                <div>
+                                    <select id="taskAssignee" required class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs appearance-none">
+                                        <option value="" disabled selected class="text-black">Executed by (Loading...)</option>
+                                    </select>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <label class="cursor-pointer"><input type="radio" name="cat" value="Program" class="peer sr-only" checked><div class="text-center text-[10px] py-1.5 rounded-lg border border-white/10 text-white/50 peer-checked:bg-orange-500/20 peer-checked:text-orange-400 peer-checked:border-orange-500/50 font-bold transition-all">Program</div></label>
+                                    <label class="cursor-pointer"><input type="radio" name="cat" value="Meeting" class="peer sr-only"><div class="text-center text-[10px] py-1.5 rounded-lg border border-white/10 text-white/50 peer-checked:bg-blue-500/20 peer-checked:text-blue-400 peer-checked:border-blue-500/50 font-bold transition-all">Meeting</div></label>
+                                    <label class="cursor-pointer"><input type="radio" name="cat" value="Event" class="peer sr-only"><div class="text-center text-[10px] py-1.5 rounded-lg border border-white/10 text-white/50 peer-checked:bg-pink-500/20 peer-checked:text-pink-400 peer-checked:border-pink-500/50 font-bold transition-all">Event</div></label>
+                                    <label class="cursor-pointer"><input type="radio" name="cat" value="Curriculum" class="peer sr-only"><div class="text-center text-[10px] py-1.5 rounded-lg border border-white/10 text-white/50 peer-checked:bg-purple-500/20 peer-checked:text-purple-400 peer-checked:border-purple-500/50 font-bold transition-all">Curric</div></label>
+                                </div>
+                                
+                                <div id="dynamicLinksWrapper" class="space-y-2 max-h-[80px] overflow-y-auto pr-1" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                                    <div class="flex gap-2 items-center">
+                                        <input type="url" name="taskLinks[]" placeholder="Drive / Doc Link (Optional)" class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs placeholder:text-white/30">
+                                        <button type="button" onclick="addLinkInput()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white rounded-lg w-8 h-8 flex items-center justify-center transition-all shrink-0">
+                                            <span class="material-symbols-outlined text-[16px]">add</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="date" id="taskDate" required class="w-full bg-black/20 border border-white/10 text-white/80 rounded-lg py-1.5 px-2 outline-none focus:border-secondary transition-all text-[10px] [color-scheme:dark]">
+                                    <select id="taskStatus" class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-1.5 px-2 outline-none focus:border-secondary transition-all text-[10px] appearance-none">
+                                        <option value="Pending" class="text-black">Pending</option>
+                                        <option value="On Progress" class="text-black">Progress</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" id="btnSaveTask" class="w-full bg-secondary text-white py-2 rounded-lg text-xs font-bold hover:bg-[#8f0f07] transition-all shadow-lg shadow-secondary/30 flex justify-center items-center gap-1 mt-1">
+                                    <span>Save Task</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="agendaPanel" class="glass-panel rounded-3xl p-5 flex-grow flex flex-col overflow-hidden transition-all duration-500">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 id="selectedDateLabel" class="text-sm font-bold text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-white/50 text-[18px]" data-icon="view_agenda">view_agenda</span> 
+                                Detailed Agenda
+                            </h4>
+                            <span id="agendaCountLabel" class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white/60 font-bold">0 Items</span>
+                        </div>
+                        
+                        <div id="agendaContainer" class="overflow-y-auto space-y-2 pr-2 flex-grow" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                            
+                            <div class="bg-white/5 border border-white/10 p-3 rounded-xl flex items-start justify-between group hover:border-white/20 transition-all">
+                                <div>
+                                    <h5 class="text-sm font-bold text-white mb-0.5">Mockup Task Title</h5>
+                                    <p class="text-[10px] text-white/50">Executed by: JD | Status: <span class="text-orange-400">Progress</span></p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="text-[9px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase">Meeting</span>
+                                        <a href="#" class="text-[9px] text-blue-300 hover:text-white underline">Doc 1</a>
+                                        <a href="#" class="text-[9px] text-blue-300 hover:text-white underline">Doc 2</a>
+                                    </div>
+                                </div>
+                                <button onclick="editTask(1)" class="opacity-0 group-hover:opacity-100 bg-black/40 border border-white/10 p-1.5 rounded-lg text-white/50 hover:text-yellow-400 hover:border-yellow-400/50 transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">edit</span>
+                                </button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                <div id="rightWrapper" class="lg:col-span-4 glass-panel rounded-3xl p-5 flex flex-col h-full overflow-hidden transition-all duration-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+                                <span class="material-symbols-outlined text-orange-400 text-2xl" data-icon="assignment_late">assignment_late</span>
+                                Unexecuted
+                            </h3>
+                            <p class="text-[10px] text-white/50">Latest Pending/Progress Tasks</p>
+                        </div>
+                        <select id="backlogFilter" onchange="loadBacklogTasks()" class="bg-white/5 border border-white/10 text-white/80 px-2 py-1.5 rounded-lg text-[10px] font-bold outline-none cursor-pointer appearance-none">
+                            <option value="All" class="text-black">All Categories</option>
+                            <option value="Program" class="text-black">Program</option>
+                            <option value="Meeting" class="text-black">Meeting</option>
+                            <option value="Event" class="text-black">Event</option>
+                            <option value="Curriculum" class="text-black">Curriculum</option>
+                        </select>
+                    </div>
+
+                    <div id="backlogContainer" class="flex-grow overflow-y-auto space-y-3 pr-2" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                        <div class="text-center py-10 text-white/40 text-xs">Loading tasks...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-KPI" class="tab-content">
+            <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+                
+                <section class="mb-6 flex-shrink-0">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                        <div>
+                            <h2 class="font-lexend text-3xl font-bold text-white mb-1">Leadership KPI Framework</h2>
+                            <p class="text-white/60 text-sm">Define, assign, and track key performance indicators.</p>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <select id="kpiMonthFilter" onchange="loadLeadershipKPIs()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                                <option value="All" class="text-black" selected>All Months</option>
+                                <option value="1" class="text-black">January</option>
+                                <option value="2" class="text-black">February</option>
+                                <option value="3" class="text-black">March</option>
+                                <option value="4" class="text-black">April</option>
+                                <option value="5" class="text-black">May</option>
+                                <option value="6" class="text-black">June</option>
+                                <option value="7" class="text-black">July</option>
+                                <option value="8" class="text-black">August</option>
+                                <option value="9" class="text-black">September</option>
+                                <option value="10" class="text-black">October</option>
+                                <option value="11" class="text-black">November</option>
+                                <option value="12" class="text-black">December</option>
+                            </select>
+
+                            <select id="kpiYearFilter" onchange="loadLeadershipKPIs()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                                <option value="All" class="text-black">All Years</option>
+                                <option value="2025" class="text-black">2025</option>
+                                <option value="2026" class="text-black" selected>2026</option>
+                                <option value="2027" class="text-black">2027</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow overflow-hidden">
+                    
+                    <div class="lg:col-span-4 glass-panel rounded-3xl p-6 flex flex-col relative overflow-hidden h-full">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-blue-600/20 rounded-full blur-[50px] pointer-events-none"></div>
+                        
+                        <h3 class="text-lg font-bold text-white mb-6 font-lexend flex items-center gap-2 border-b border-white/10 pb-3">
+                            <span class="material-symbols-outlined text-blue-400">target</span> Set New KPI
+                        </h3>
+                        
+                        <form id="kpiSetForm" class="space-y-4 flex-grow flex flex-col">
+                            <div>
+                                <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">Target Position</label>
+                                <select id="kpiRole" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 transition-all text-sm appearance-none cursor-pointer">
+                                    <option value="" disabled selected class="text-black">Select Leadership Role...</option>
+                                    <option value="Manager" class="text-black">Branch Manager</option>
+                                    <option value="Supervisor" class="text-black">Academic/Ops Supervisor</option>
+                                    <option value="HRD" class="text-black">HR & Recruitment</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">KPI Indicator Name</label>
+                                <input type="text" id="kpiName" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 transition-all text-sm" placeholder="e.g. Total Active Students">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">Target Measure</label>
+                                    <input type="text" id="kpiTarget" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 transition-all text-sm" placeholder="e.g. > 90%">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">Target Deadline</label>
+                                    <input type="date" id="kpiDeadline" required class="w-full bg-black/20 border border-white/10 text-white/80 rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 transition-all text-sm [color-scheme:dark]">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">Weight (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="kpiWeight" min="1" max="100" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 pr-8 outline-none focus:border-blue-500 transition-all text-sm" placeholder="e.g. 40">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">%</span>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow">
+                                <label class="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1 block">Definition / Details</label>
+                                <textarea id="kpiNotes" class="w-full h-full min-h-[60px] bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-blue-500 transition-all text-sm resize-none" placeholder="Explain the criteria..."></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30 mt-2">
+                                Deploy KPI
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-8 flex gap-4 overflow-x-auto pb-2" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                        
+                        <div class="min-w-[280px] w-full flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-blue-500/30 flex justify-between items-center bg-blue-900/20">
+                                <h3 class="font-bold text-blue-400 flex items-center gap-2 text-sm"><span class="material-symbols-outlined text-[18px]">manage_accounts</span> Branch Manager</h3>
+                                <span id="kpi-weight-manager" class="text-[10px] bg-blue-500/20 px-2 py-1 rounded text-blue-300 font-bold border border-blue-500/30 transition-colors">Total: 0%</span>
+                            </div>
+                            <div id="kpi-col-manager" class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No KPI defined yet.</div>
+                            </div>
+                        </div>
+
+                        <div class="min-w-[280px] w-full flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-purple-500/30 flex justify-between items-center bg-purple-900/20">
+                                <h3 class="font-bold text-purple-400 flex items-center gap-2 text-sm"><span class="material-symbols-outlined text-[18px]">supervisor_account</span> Supervisor</h3>
+                                <span id="kpi-weight-supervisor" class="text-[10px] bg-purple-500/20 px-2 py-1 rounded text-purple-300 font-bold border border-purple-500/30 transition-colors">Total: 0%</span>
+                            </div>
+                            <div id="kpi-col-supervisor" class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No KPI defined yet.</div>
+                            </div>
+                        </div>
+
+                        <div class="min-w-[280px] w-full flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-orange-500/30 flex justify-between items-center bg-orange-900/20">
+                                <h3 class="font-bold text-orange-400 flex items-center gap-2 text-sm"><span class="material-symbols-outlined text-[18px]">diversity_3</span> HRD</h3>
+                                <span id="kpi-weight-hrd" class="text-[10px] bg-orange-500/20 px-2 py-1 rounded text-orange-300 font-bold border border-orange-500/30 transition-colors">Total: 0%</span>
+                            </div>
+                            <div id="kpi-col-hrd" class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No KPI defined yet.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-Reviews" class="tab-content">
+          <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+
+            <section class="mb-6 flex-shrink-0">
+              <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                <div>
+                  <h2 class="font-lexend text-3xl font-bold text-white mb-1">Supervisor Feedback Review</h2>
+                  <p class="text-white/60 text-sm">Review daily reports, agenda notes, obstacles, and ideas submitted by supervisors.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <input id="managerFeedbackDateFilter" type="date" onchange="refreshSelectedBranchFeedback()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer hover:bg-white/10 transition-colors [color-scheme:dark]">
+
+                  <select id="managerFeedbackMonthFilter" onchange="refreshSelectedBranchFeedback()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors uppercase tracking-wider">
+                    <option value="All" class="text-black">All Months</option>
+                    <option value="1" class="text-black">January</option>
+                    <option value="2" class="text-black">February</option>
+                    <option value="3" class="text-black">March</option>
+                    <option value="4" class="text-black">April</option>
+                    <option value="5" class="text-black">May</option>
+                    <option value="6" class="text-black">June</option>
+                    <option value="7" class="text-black">July</option>
+                    <option value="8" class="text-black">August</option>
+                    <option value="9" class="text-black">September</option>
+                    <option value="10" class="text-black">October</option>
+                    <option value="11" class="text-black">November</option>
+                    <option value="12" class="text-black">December</option>
+                  </select>
+
+                  <select id="managerFeedbackYearFilter" onchange="refreshSelectedBranchFeedback()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Years</option>
+                    <option value="2025" class="text-black">2025</option>
+                    <option value="2026" class="text-black" selected>2026</option>
+                    <option value="2027" class="text-black">2027</option>
+                  </select>
+
+                  <button onclick="clearManagerFeedbackFilters()" class="bg-white/10 hover:bg-white/20 text-white/70 px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all">
+                    Clear
+                  </button>
+                </div>
               </div>
-            `;
-          }
-        });
-    }
+            </section>
 
-    function renderVaultCategories() {
-      const container = document.getElementById("vaultCategoriesList");
-      if (!container) return;
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow overflow-hidden min-h-0">
 
-      let html = "";
+              <div class="lg:col-span-5 glass-panel rounded-3xl p-5 flex flex-col h-full min-h-0">
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3 flex-shrink-0">
+                  <div>
+                    <h3 class="text-sm font-bold text-white font-lexend flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-400 text-[18px]">domain</span>
+                      Branch Feedback Inbox
+                    </h3>
+                    <p class="text-[10px] text-white/40 mt-1">Click branch to inspect supervisor feedback.</p>
+                  </div>
 
-      const allActive = activeVaultCategory === "All Files"
-        ? "bg-white text-black font-black"
-        : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+                  <span id="managerFeedbackBranchCount" class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded font-bold">
+                    0 Branches
+                  </span>
+                </div>
 
-      html += `
-        <button onclick="setVaultCategory('All Files')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors ${allActive}">
-          All Files
-        </button>
-      `;
-
-      vaultCategories.forEach(cat => {
-        const isActive = activeVaultCategory === cat.name;
-
-        const style = isActive
-          ? "bg-blue-600 text-white font-black shadow-lg shadow-blue-600/30"
-          : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
-
-        html += `
-          <button onclick="setVaultCategory('${escapeVaultValue(cat.name)}')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${style}">
-            ${cat.name}
-          </button>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function setVaultCategory(catName) {
-      activeVaultCategory = catName;
-      renderVaultCategories();
-      renderVaultFiles();
-    }
-
-    function renderVaultFiles() {
-      const container = document.getElementById("vaultFilesGrid");
-      const searchInput = document.getElementById("vaultSearch");
-      if (!container) return;
-
-      const searchQ = searchInput ? searchInput.value.toLowerCase() : "";
-
-      container.innerHTML = "";
-      let foundCount = 0;
-
-      vaultFiles.forEach(file => {
-        const title = String(file.title || "");
-        const desc = String(file.desc || "");
-        const category = String(file.category || "");
-        const link = String(file.link || "");
-
-        const matchCat = activeVaultCategory === "All Files" || category === activeVaultCategory;
-        const matchSearch =
-          title.toLowerCase().includes(searchQ) ||
-          desc.toLowerCase().includes(searchQ) ||
-          category.toLowerCase().includes(searchQ);
-
-        if (!matchCat || !matchSearch) return;
-
-        foundCount++;
-
-        container.insertAdjacentHTML("beforeend", `
-          <div class="glass-panel p-4 rounded-2xl border border-white/5 hover:border-blue-500/50 hover:bg-white/5 transition-all group flex flex-col justify-between min-h-[155px]">
-            <div>
-              <div class="flex justify-between items-start mb-3">
-                <span class="bg-blue-500/20 text-blue-300 text-[8px] px-2 py-1 rounded font-black uppercase tracking-wider line-clamp-1 max-w-[75%]">
-                  ${category || "General"}
-                </span>
-
-                <a href="${link}" target="_blank" class="material-symbols-outlined text-[16px] text-white/50 hover:text-blue-300 transition-colors bg-black/40 p-1 rounded-md">
-                  open_in_new
-                </a>
+                <div id="managerFeedbackBranchGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 flex-grow min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                  <div class="col-span-full text-center py-12 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+                    Loading branches...
+                  </div>
+                </div>
               </div>
 
-              <h4 class="font-bold text-white text-sm mb-1 leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors">
-                ${title || "Untitled File"}
-              </h4>
+              <div class="lg:col-span-7 glass-panel rounded-3xl p-6 flex flex-col h-full min-h-0 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-600/10 rounded-full blur-[60px] pointer-events-none"></div>
 
-              <p class="text-[10px] text-white/50 line-clamp-3 leading-relaxed">
-                ${desc || "No description provided."}
-              </p>
+                <div id="managerFeedbackEmptyState" class="absolute inset-0 flex flex-col items-center justify-center bg-[#05051a]/80 backdrop-blur-sm z-20 transition-opacity duration-300">
+                  <span class="material-symbols-outlined text-6xl text-white/20 mb-4">touch_app</span>
+                  <p class="text-white/50 text-sm font-bold uppercase tracking-widest">Select a branch to view feedback</p>
+                </div>
+
+                <div class="flex justify-between items-start mb-5 border-b border-white/10 pb-4 relative z-10 flex-shrink-0">
+                  <div>
+                    <h2 id="managerFeedbackBranchTitle" class="text-2xl font-bold text-white font-lexend">Branch Name</h2>
+                    <p class="text-xs text-white/50 mt-1">
+                      Feedback submitted by supervisors for selected branch.
+                    </p>
+                  </div>
+
+                  <div class="text-right">
+                    <p class="text-[10px] text-white/50 uppercase tracking-wider font-bold mb-1">Feedback Count</p>
+                    <h3 id="managerFeedbackCount" class="text-3xl font-black text-blue-400">0</h3>
+                  </div>
+                </div>
+
+                <div id="managerFeedbackList" class="relative z-10 flex-grow overflow-y-auto pr-3 space-y-3 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                  <div class="text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+                    No feedback selected.
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
-        `);
-      });
+        </div>
 
-      if (foundCount === 0) {
-        container.innerHTML = `
-          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
-            No files found.
+        
+
+        <div id="tab-Files" class="tab-content">
+            <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+                
+                <section class="mb-4 flex-shrink-0">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
+                        <div>
+                            <h2 class="font-lexend text-3xl font-bold text-white mb-1">The Vault</h2>
+                            <p class="text-white/60 text-sm">Centralized SOPs, curriculum, and drive links.</p>
+                        </div>
+                        <div class="w-full lg:w-80 flex items-center gap-2">
+                            <div class="relative flex-grow">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-[18px]">search</span>
+                                <input type="text" id="vaultSearch" onkeyup="renderVaultFiles()" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 pl-9 pr-4 outline-none focus:border-blue-500 transition-all text-sm" placeholder="Search files...">
+                            </div>
+                            <button onclick="openAddFileModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl font-bold transition-all flex items-center gap-1 shadow-lg shadow-blue-600/30 flex-shrink-0">
+                                <span class="material-symbols-outlined text-[16px]">upload</span> File
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-2 flex-shrink-0" style="scrollbar-width: none;" id="vaultCategoriesList">
+                    <div class="text-xs text-white/50 italic">Loading categories...</div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" id="vaultFilesGrid" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                    </div>
+
+            </div>
+        </div>
+
+        <div id="addCatModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="addCatContent">
+                <h3 class="text-lg font-bold text-white font-lexend mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-400">create_new_folder</span> Add Category
+                </h3>
+                <form id="formAddCategory" class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category Name</label>
+                        <input type="text" id="newCatName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-green-500 text-sm" placeholder="e.g. Legal Docs">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeAddCatModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+                        <button type="submit" id="btnSaveCat" class="bg-green-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-green-500 shadow-lg shadow-green-600/20">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="addFileModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="addFileContent">
+                <h3 class="text-lg font-bold text-white font-lexend mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">upload_file</span> Store New File Link
+                </h3>
+                <form id="formAddFile" class="space-y-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">File Title</label>
+                        <input type="text" id="newFileTitle" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-blue-500 text-sm" placeholder="e.g. Master Banner Ramadhan">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
+                            <select id="newFileCategory" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-blue-500 text-sm appearance-none cursor-pointer">
+                                </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Google Drive Link</label>
+                            <input type="url" id="newFileLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-blue-500 text-sm" placeholder="https://drive.google.com/...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Short Description</label>
+                        <textarea id="newFileDesc" rows="2" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-blue-500 text-sm resize-none" placeholder="Brief details about this file..."></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2 border-t border-white/10 mt-2">
+                        <button type="button" onclick="closeAddFileModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+                        <button type="submit" id="btnSaveFile" class="bg-blue-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-blue-500 shadow-lg shadow-blue-600/20">Save File</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="editFileModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="editFileContent">
+                <h3 class="text-lg font-bold text-white font-lexend mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-yellow-400">edit_document</span> Edit File Link
+                </h3>
+                <form id="formEditFile" class="space-y-3">
+                    <input type="hidden" id="editFileOldTitle">
+                    
+                    <div>
+                        <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">File Title</label>
+                        <input type="text" id="editFileTitle" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-yellow-500 text-sm">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
+                            <select id="editFileCategory" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-yellow-500 text-sm appearance-none cursor-pointer">
+                                </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Google Drive Link</label>
+                            <input type="url" id="editFileLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-yellow-500 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Short Description</label>
+                        <textarea id="editFileDesc" rows="2" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-3 outline-none focus:border-yellow-500 text-sm resize-none"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2 border-t border-white/10 mt-2">
+                        <button type="button" onclick="closeEditFileModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+                        <button type="submit" id="btnUpdateFile" class="bg-yellow-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-yellow-500 shadow-lg shadow-yellow-600/20 text-black">Update File</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="tab-Strategy" class="tab-content">
+            <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+                <section class="mb-4 flex-shrink-0">
+                    <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div>
+                            <h2 class="font-lexend text-3xl font-bold text-white mb-1">Strategy Workspace</h2>
+                            <p class="text-white/60 text-sm">Assign, track, and validate strategic initiatives for branches.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <select id="strategyMonthFilter" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                                    <option value="All" class="text-black" selected>All Months</option>
+                                    <option value="1" class="text-black">January</option>
+                                    <option value="2" class="text-black">February</option>
+                                    <option value="3" class="text-black">March</option>
+                                    <option value="4" class="text-black">April</option>
+                                    <option value="5" class="text-black">May</option>
+                                    <option value="6" class="text-black">June</option>
+                                    <option value="7" class="text-black">July</option>
+                                    <option value="8" class="text-black">August</option>
+                                    <option value="9" class="text-black">September</option>
+                                    <option value="10" class="text-black">October</option>
+                                    <option value="11" class="text-black">November</option>
+                                    <option value="12" class="text-black">December</option>
+                                </select>
+
+                                <select id="strategyYearFilter" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                                    <option value="All" class="text-black">All Years</option>
+                                    <option value="2025" class="text-black">2025</option>
+                                    <option value="2026" class="text-black" selected>2026</option>
+                                    <option value="2027" class="text-black">2027</option>
+                                </select>
+                                
+                                <button onclick="openStrategyModal()" class="ml-2 bg-blue-600 px-5 py-2.5 rounded-lg text-white font-bold text-sm flex items-center gap-2 hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30">
+                                    <span class="material-symbols-outlined text-[18px]">add</span> Deploy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex-grow overflow-x-auto overflow-y-hidden pb-4" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                    <div class="flex gap-6 h-full min-h-[600px] w-max px-1">
+                        
+                        <div class="w-[320px] md:w-[350px] flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
+                                <h3 class="font-bold text-white flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> Planned
+                                </h3>
+                                <span id="count-planned" class="text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/60 font-bold">0</span>
+                            </div>
+                            <div class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;" id="col-planned">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No strategies planned yet.</div>
+                            </div>
+                        </div>
+
+                        <div class="w-[320px] md:w-[350px] flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-blue-500/10">
+                                <h3 class="font-bold text-white flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span> Executing
+                                </h3>
+                                <span id="count-executing" class="text-xs bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-300 font-bold">0</span>
+                            </div>
+                            <div class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;" id="col-executing">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No strategies currently executing.</div>
+                            </div>
+                        </div>
+
+                        <div class="w-[320px] md:w-[350px] flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-orange-500/10">
+                                <h3 class="font-bold text-white flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"></span> Head Review
+                                </h3>
+                                <span id="count-review" class="text-xs bg-orange-500/20 px-2 py-0.5 rounded-full text-orange-300 font-bold">0</span>
+                            </div>
+                            <div class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;" id="col-review">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No strategies under review.</div>
+                            </div>
+                        </div>
+
+                        <div class="w-[320px] md:w-[350px] flex flex-col bg-white/5 rounded-3xl border border-white/5 overflow-hidden h-full">
+                            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-green-500/10">
+                                <h3 class="font-bold text-white flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span> All Done
+                                </h3>
+                                <span id="count-done" class="text-xs bg-green-500/20 px-2 py-0.5 rounded-full text-green-300 font-bold">0</span>
+                            </div>
+                            <div class="p-3 flex-grow overflow-y-auto space-y-3" style="scrollbar-width: none;" id="col-done">
+                                <div class="text-center py-10 text-white/30 text-xs italic">No strategies completed.</div>
+                            </div>
+                        </div>
+
+                        <div id="viewStrategyModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+                            <div class="bg-[#05051a]/95 border border-white/20 p-6 sm:p-8 rounded-3xl w-full max-w-[500px] shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-300" id="viewStrategyContent">
+                                
+                                <div class="flex justify-between items-start mb-6">
+                                    <div>
+                                        <span id="viewStratCat" class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-bold uppercase tracking-wider">Category</span>
+                                        <h3 id="viewStratTitle" class="text-xl font-bold text-white font-lexend mt-2 leading-snug">Strategy Title Here</h3>
+                                    </div>
+                                    <button type="button" onclick="closeViewStrategyModal()" class="text-white/50 hover:text-white transition-colors bg-white/5 rounded-full p-1"><span class="material-symbols-outlined">close</span></button>
+                                </div>
+
+                                <div class="space-y-4 mb-6">
+                                    <div class="glass-panel p-4 rounded-xl flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[10px] text-white/50 uppercase font-bold mb-1">Assigned PIC</p>
+                                            <p id="viewStratPIC" class="text-sm text-white font-bold">Name (Branch)</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-[10px] text-white/50 uppercase font-bold mb-1">Deadline</p>
+                                            <p id="viewStratDate" class="text-sm text-orange-400 font-bold">Date</p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[10px] text-white/50 uppercase font-bold mb-1">Details & Brief</p>
+                                        <div id="viewStratDesc" class="bg-white/5 p-4 rounded-xl text-sm text-white/80 leading-relaxed border border-white/10 min-h-[60px] max-h-[150px] overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;"></div>
+                                    </div>
+
+                                    <div id="viewStratLinkContainer" class="hidden">
+                                        <p class="text-[10px] text-white/50 uppercase font-bold mb-1">Attachment</p>
+                                        <a id="viewStratLink" href="#" target="_blank" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-blue-300 px-4 py-2 rounded-lg text-xs font-bold transition-colors w-full border border-white/5">
+                                            <span class="material-symbols-outlined text-[16px]">link</span> Open Reference Document
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="pt-5 border-t border-white/10 flex items-center justify-between bg-black/20 -mx-6 sm:-mx-8 -mb-6 sm:-mb-8 p-6 sm:p-8 rounded-b-3xl">
+                                    <div class="flex items-center gap-3 w-full">
+                                        <label class="text-xs font-bold text-white/60">Move to:</label>
+                                        <select id="viewStratStatus" class="flex-grow bg-white/10 border border-white/20 text-white rounded-xl py-2 px-3 outline-none focus:border-blue-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                                            <option value="Planned" class="text-black">Planned</option>
+                                            <option value="Executing" class="text-black">Executing (On Progress)</option>
+                                            <option value="Review" class="text-black">Head Review</option>
+                                            <option value="Done" class="text-black">All Done</option>
+                                        </select>
+                                    </div>
+                                    <input type="hidden" id="viewStratId">
+                                    <button onclick="saveStrategyStatus()" id="btnUpdateStrat" class="ml-3 bg-white text-black px-5 py-2 rounded-xl text-sm font-bold hover:bg-white/80 transition-all whitespace-nowrap shadow-lg">
+                                        Save
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="createStrategyModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-[#05051a]/95 border border-white/20 p-6 sm:p-8 rounded-3xl w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-300" id="strategyModalContent">
+                
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white font-lexend flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-400">rocket_launch</span> Deploy Strategy
+                    </h3>
+                    <button type="button" onclick="closeStrategyModal()" class="text-white/50 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <form id="newStrategyForm" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Strategy Title</label>
+                        <input type="text" id="strategyTitle" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm" placeholder="e.g. Kampanye Goes to Campus">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Assign To (PIC)</label>
+                        <select id="strategyPicAssignee" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm appearance-none">
+                            <option value="" disabled selected class="text-black">Loading PICs from database...</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Category</label>
+                            <select id="strategyType" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm appearance-none">
+                                <option value="Acquisition" class="text-black">Acquisition</option>
+                                <option value="Retention" class="text-black">Retention</option>
+                                <option value="Curriculum" class="text-black">Curriculum</option>
+                                <option value="Event" class="text-black">Event</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Target Deadline</label>
+                            <input type="date" id="strategyDeadline" required class="w-full bg-white/5 border border-white/10 text-white/80 rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm [color-scheme:dark]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Reference Link</label>
+                        <input type="url" id="strategyLink" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm" placeholder="G-Drive or Docs link (Optional)">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-white/70 uppercase tracking-wider mb-1 block">Details</label>
+                        <textarea id="strategyDesc" rows="2" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-blue-500 focus:bg-white/10 transition-all text-sm resize-none" placeholder="Success criteria?"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <button type="button" onclick="closeStrategyModal()" class="px-5 py-2.5 rounded-xl text-white font-bold text-sm bg-white/5 hover:bg-white/10 transition-colors">Cancel</button>
+                        <button type="submit" class="bg-blue-600 px-6 py-2.5 rounded-xl text-white font-bold text-sm hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30">Deploy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        </main>
+
+<div id="logoutModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[9999]">
+          <div class="bg-white rounded-xl p-6 w-[300px] text-center">
+            <h3 class="text-gray-800 font-bold text-lg mb-2">Confirm Logout</h3>
+            <p class="text-gray-500 text-sm mb-5">Are you sure you want to logout?</p>
+
+            <div class="flex justify-center gap-3">
+              <button onclick="closeLogoutModal()" class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">
+                Cancel
+              </button>
+              <button onclick="confirmLogout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600">
+                Logout
+              </button>
+            </div>
           </div>
-        `;
-      }
-    }
+        </div>
 
-    function populateCategoryDropdown() {
-      const select = document.getElementById("newFileCategory");
-      if (!select) return;
 
-      select.innerHTML = "";
+    <nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
+        <div class="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl mx-auto flex items-end px-3 py-2 gap-1.5 sm:gap-3 dock-container pointer-events-auto">
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Dashboard')">
+                <button id="btn-Dashboard" class="text-white bg-blue-900 rounded-xl p-2.5 shadow-lg dock-active transition-all duration-300 pointer-events-none">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-100 transition-opacity">Workspace</span>
+            </div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Tasks')">
+                <button id="btn-Tasks" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="task_alt">task_alt</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Tasks</span>
+            </div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('KPI')">
+                <button id="btn-KPI" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="analytics">analytics</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">KPI</span>
+            </div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Reviews')">
+                <button id="btn-Reviews" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="query_stats">query_stats</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Reviews</span>
+            </div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Files')">
+                <button id="btn-Files" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="folder_open">folder_open</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Files</span>
+            </div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Strategy')">
+                <button id="btn-Strategy" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="rocket_launch">rocket_launch</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Strategy</span>
+            </div>
+            
+            <div class="w-[1px] h-8 bg-white/20 mx-1 mb-1.5"></div>
+            
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Settings')">
+                <button id="btn-Settings" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Settings</span>
+            </div>
+            
+        </div>
+    </nav>
 
-      if (!vaultCategories.length) {
-        select.innerHTML = `<option value="General" class="text-black">General</option>`;
-        return;
-      }
+    <script>
 
-      vaultCategories.forEach(cat => {
-        select.innerHTML += `<option value="${cat.name}" class="text-black">${cat.name}</option>`;
-      });
-    }
+        const tabs = ['Dashboard','Tasks', 'KPI', 'Reviews', 'Files', 'Strategy', 'Settings'];
 
-    function openAddFileModal() {
-      const modal = document.getElementById("addFileModal");
-      const content = document.getElementById("addFileContent");
+        function switchTab(activeTabName) {
+            tabs.forEach(tab => {
+                const contentEl = document.getElementById(`tab-${tab}`);
+                if(contentEl) {
+                    if(tab === activeTabName) {
+                        contentEl.classList.add('tab-active');
+                        contentEl.style.animation = 'none';
+                        contentEl.offsetHeight; 
+                        contentEl.style.animation = null; 
+                    } else {
+                        contentEl.classList.remove('tab-active');
+                    }
+                }
 
-      modal.classList.remove("hidden");
-      setTimeout(() => {
-        modal.classList.remove("opacity-0");
-        content.classList.remove("scale-95");
-      }, 10);
-    }
+                const btnEl = document.getElementById(`btn-${tab}`);
+                if(btnEl) {
+                    const labelEl = btnEl.nextElementSibling;
+                    if(tab === activeTabName) {
+                        btnEl.classList.add('dock-active', 'bg-blue-900');
+                        btnEl.classList.remove('text-white/60', 'bg-transparent');
+                        labelEl.classList.add('opacity-100');
+                        labelEl.classList.remove('opacity-0');
+                    } else {
+                        btnEl.classList.remove('dock-active', 'bg-blue-900');
+                        btnEl.classList.add('text-white/60', 'bg-transparent');
+                        labelEl.classList.remove('opacity-100');
+                        labelEl.classList.add('opacity-0');
+                    }
+                }
+            });
+        }
 
-    function closeAddFileModal() {
-      const modal = document.getElementById("addFileModal");
-      const content = document.getElementById("addFileContent");
+        function logout() {
+          document.getElementById("logoutModal").classList.remove("hidden");
+          document.getElementById("logoutModal").classList.add("flex");
+        }
 
-      modal.classList.add("opacity-0");
-      content.classList.add("scale-95");
+        function closeLogoutModal() {
+          const modal = document.getElementById("logoutModal");
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+        }
 
-      setTimeout(() => {
-        modal.classList.add("hidden");
-        document.getElementById("formAddFile").reset();
-      }, 300);
-    }
+        function confirmLogout() {
+          localStorage.removeItem("currentUser");
+          window.location.href = "index.html";
+        }
 
-    const formAddFileEl = document.getElementById("formAddFile");
-    if (formAddFileEl) {
-      formAddFileEl.addEventListener("submit", function(e) {
-        e.preventDefault();
+        // ==========================================
+        // GLOBAL STATE & DATA FETCHING
+        // ==========================================
+        let globalTasks = []; // Menyimpan semua data untuk kalender & agenda
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        let selectedDateStr = currentDate.toDateString();
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-        const btn = document.getElementById("btnSaveFile");
-        const originalText = btn.innerHTML;
-
-        btn.innerHTML = "Saving...";
-        btn.disabled = true;
-
-        const payload = {
-          title: document.getElementById("newFileTitle").value,
-          desc: document.getElementById("newFileDesc").value,
-          category: document.getElementById("newFileCategory").value,
-          link: document.getElementById("newFileLink").value
+        // Kategori warna untuk dot di kalender & chip agenda
+        const catStyles = {
+            "Program": { color: "bg-orange-400", style: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+            "Meeting": { color: "bg-blue-400", style: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+            "Event": { color: "bg-pink-400", style: "bg-pink-500/20 text-pink-300 border-pink-500/30" },
+            "Curriculum": { color: "bg-purple-400", style: "bg-purple-500/20 text-purple-300 border-purple-500/30" }
         };
 
-        apiCall("addVaultFile", payload)
-          .then(function(res) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+        function fetchAllTasksAndRender() {
+          apiCall("getAllManagerTasks")
+            .then(function(response) {
+              if (!response || !response.success) {
+                console.error("getAllManagerTasks failed:", response);
+                globalTasks = [];
+                renderCalendar();
+                renderDailyAgenda();
+                return;
+              }
 
-            if (!res || !res.success) {
-              alert("Failed to save file.");
+              globalTasks = (response.data || []).map(t => {
+                const rawDate = t.targetDate || t.date || t.deadline || "";
+                const parsedDate = rawDate ? new Date(rawDate) : null;
+
+                return {
+                  ...t,
+                  id: String(t.id || t.rowId || ""),
+                  title: t.title || "",
+                  category: t.category || "Program",
+                  status: t.status || "Pending",
+                  assignee: t.assignee || t.spv || "Unassigned",
+                  link: t.link || t.links || "",
+                  targetDate: parsedDate && !isNaN(parsedDate) ? parsedDate.toDateString() : "",
+                  dateValue: parsedDate && !isNaN(parsedDate) ? parsedDate.toISOString().split("T")[0] : ""
+                };
+              });
+
+              renderCalendar();
+              renderDailyAgenda();
+            })
+            .catch(function(err) {
+              console.error("getAllManagerTasks error:", err);
+              globalTasks = [];
+              renderCalendar();
+              renderDailyAgenda();
+            });
+        }
+
+        // ==========================================
+        // CALENDAR & AGENDA LOGIC
+        // ==========================================
+        function renderCalendar() {
+            document.getElementById("calendarMonthYear").innerHTML = `<span class="material-symbols-outlined text-secondary text-2xl" data-icon="calendar_month">calendar_month</span> ${monthNames[currentMonth]} ${currentYear}`;
+            const calendarGrid = document.getElementById("calendarGrid");
+            calendarGrid.innerHTML = "";
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+            // Tanggal kosong (bulan lalu)
+            for (let i = firstDay; i > 0; i--) {
+                calendarGrid.innerHTML += `<div class="py-2 text-white/20 rounded-lg text-xs">${daysInPrevMonth - i + 1}</div>`;
+            }
+
+            // Tanggal aktif bulan ini
+            for (let i = 1; i <= daysInMonth; i++) {
+                const iterDate = new Date(currentYear, currentMonth, i);
+                const iterDateStr = iterDate.toDateString();
+                const isToday = iterDateStr === new Date().toDateString();
+                const isSelected = iterDateStr === selectedDateStr;
+                
+                // Cek apakah ada task di tanggal ini
+                const tasksToday = globalTasks.filter(t => t.targetDate === iterDateStr);
+                
+                let classes = "py-3 rounded-lg cursor-pointer transition-all text-xs flex justify-center items-center relative ";
+                if (isSelected) {
+                    classes += "bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/40 transform scale-105";
+                    document.getElementById("selectedDateLabel").innerHTML = `<span class="material-symbols-outlined text-white/50 text-[16px]">list_alt</span> ${monthNames[currentMonth].substring(0,3)} ${i}, ${currentYear}`;
+                } else if (isToday) {
+                    classes += "bg-secondary text-white font-bold";
+                } else {
+                    classes += "text-white hover:bg-white/10";
+                }
+
+                // Render Titik Indikator Warna (Max 3 titik agar tidak penuh)
+                let dotsHtml = "";
+                if (tasksToday.length > 0) {
+                    dotsHtml = `<div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-[2px]">`;
+                    tasksToday.slice(0, 3).forEach(t => {
+                        const dotColor = catStyles[t.category] ? catStyles[t.category].color : "bg-white";
+                        dotsHtml += `<div class="w-1 h-1 rounded-full ${dotColor}"></div>`;
+                    });
+                    dotsHtml += `</div>`;
+                }
+
+                calendarGrid.innerHTML += `<div class="${classes}" onclick="selectDate(${currentYear}, ${currentMonth}, ${i})">${i} ${dotsHtml}</div>`;
+            }
+        }
+
+        function getInitials(name) {
+            if (!name || name === "Unassigned") return "?";
+            const parts = name.split(' ');
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function renderDailyAgenda() {
+          const agendaContainer = document.getElementById("agendaContainer");
+          const agendaCountLabel = document.getElementById("agendaCountLabel");
+
+          const tasksToday = globalTasks.filter(t => t.targetDate === selectedDateStr);
+          agendaCountLabel.textContent = `${tasksToday.length} Items`;
+
+          if (tasksToday.length === 0) {
+            agendaContainer.innerHTML = `
+              <div class="text-center py-6 text-white/40 text-xs">
+                No tasks scheduled for this day.
+              </div>
+            `;
+            return;
+          }
+
+          let agendaHtml = "";
+
+          tasksToday.forEach(task => {
+            const style = catStyles[task.category]
+              ? catStyles[task.category].style
+              : "bg-white/10 text-white/60 border-white/20";
+
+            const links = task.link
+              ? task.link.split(",").map((url, i) => `
+                  <a href="${url.trim()}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline">
+                    Doc ${i + 1}
+                  </a>
+                `).join("")
+              : "";
+
+            const initials = getInitials(task.assignee);
+
+            agendaHtml += `
+              <div class="bg-white/5 border border-white/10 p-3 rounded-xl flex items-start justify-between group hover:border-white/20 transition-all">
+                <div>
+                  <h5 class="text-sm font-bold text-white mb-0.5">${task.title}</h5>
+                  <p class="text-[10px] text-white/50">
+                    Executed by: ${task.assignee} | Status:
+                    <span class="text-orange-400">${task.status}</span>
+                  </p>
+
+                  <div class="flex gap-2 mt-2 flex-wrap">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase border ${style}">
+                      ${task.category}
+                    </span>
+                    ${links}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <div class="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold">
+                    ${initials}
+                  </div>
+
+                  <button onclick="editTask('${task.id}')" class="opacity-0 group-hover:opacity-100 bg-black/40 border border-white/10 p-1.5 rounded-lg text-white/50 hover:text-yellow-400 hover:border-yellow-400/50 transition-all">
+                    <span class="material-symbols-outlined text-[14px]">edit</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+
+          agendaContainer.innerHTML = agendaHtml;
+        }
+
+        // Aksi mengubah status dari Dropdown
+        function changeStatus(taskId, selectElement) {
+            const newStatus = selectElement.value;
+            selectElement.disabled = true;
+            selectElement.classList.add('opacity-50', 'cursor-wait');
+
+            apiCall("updateTaskStatusById", {
+                taskId: taskId,
+                newStatus: newStatus
+            }).then(function(response) {
+                if (response && response.success) {
+                    fetchAllTasksAndRender();
+                    loadBacklogTasks();
+                } else {
+                    alert((response && response.message) || "Failed to update status.");
+                    selectElement.disabled = false;
+                    selectElement.classList.remove('opacity-50', 'cursor-wait');
+                }
+            }).catch(function(err) {
+                console.error("updateTaskStatusById error:", err);
+                alert("Connection error.");
+                selectElement.disabled = false;
+                selectElement.classList.remove('opacity-50', 'cursor-wait');
+            });
+        }
+
+        // Fungsi Navigasi Kalender
+        function changeMonth(offset) {
+            currentMonth += offset;
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; } 
+            else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            renderCalendar();
+        }
+        
+        function resetToToday() {
+            const now = new Date(); currentMonth = now.getMonth(); currentYear = now.getFullYear(); selectedDateStr = now.toDateString();
+            renderCalendar();
+            renderDailyAgenda();
+        }
+        
+        function selectDate(year, month, day) {
+            selectedDateStr = new Date(year, month, day).toDateString();
+            renderCalendar();
+            renderDailyAgenda();
+        }
+
+        let calendarZoomed = false;
+
+        function toggleCalendarZoom() {
+          calendarZoomed = !calendarZoomed;
+
+          const grid = document.getElementById('mainTasksGrid');
+          const icon = document.getElementById('zoomIcon');
+
+          if (calendarZoomed) {
+            grid.classList.add('calendar-zoomed');
+            icon.textContent = "zoom_in_map";
+          } else {
+            grid.classList.remove('calendar-zoomed');
+            icon.textContent = "zoom_out_map";
+          }
+
+          setTimeout(() => {
+            renderCalendar();
+            renderDailyAgenda();
+          }, 250);
+        }
+
+        document.getElementById('inlineTaskForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+
+          const btn = document.getElementById('btnSaveTask');
+          const editingId = btn.dataset.editingId || "";
+
+          btn.innerHTML = editingId ? "Updating..." : "Saving...";
+          btn.disabled = true;
+
+          const payload = {
+            id: editingId,
+            title: document.getElementById('taskTitle').value,
+            category: document.querySelector('input[name="cat"]:checked').value,
+            link: Array.from(document.querySelectorAll('input[name="taskLinks[]"]'))
+              .map(input => input.value.trim())
+              .filter(Boolean)
+              .join(", "),
+            targetDate: document.getElementById('taskDate').value,
+            status: document.getElementById('taskStatus').value,
+            assignee: document.getElementById('taskAssignee').value
+          };
+
+          const actionName = editingId ? "updateManagerTask" : "assignNewTask";
+
+          apiCall(actionName, payload)
+            .then(handleTaskSave)
+            .catch(function(err) {
+              btn.innerHTML = '<span>Save Task</span>';
+              btn.disabled = false;
+              console.error(actionName + " error:", err);
+              alert("Connection error.");
+            });
+
+          function handleTaskSave(response) {
+            btn.innerHTML = '<span>Save Task</span>';
+            btn.disabled = false;
+            delete btn.dataset.editingId;
+
+            if (!response || !response.success) {
+              alert("Gagal: " + ((response && response.message) || "Backend returned empty response."));
               return;
             }
 
-            closeAddFileModal();
-            loadVaultData();
-          })
-          .catch(function(err) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            console.error("addVaultFile error:", err);
-            alert("Connection error.");
-          });
-      });
-    }
+            document.getElementById('inlineTaskForm').reset();
+            resetLinkInputs();
+            fetchAllTasksAndRender();
+            loadBacklogTasks();
+          }
+        });
 
-    function escapeVaultValue(value) {
-      return String(value || "").replace(/'/g, "\\'");
-    }
-  </script>
+
+        // Fetch Backlog Data Logic (SAMA SEPERTI SEBELUMNYA)
+        function loadBacklogTasks() {
+            const container = document.getElementById('backlogContainer');
+            const filterVal = document.getElementById('backlogFilter').value;
+            container.innerHTML = '<div class="text-center py-10 text-white/40 text-xs flex justify-center"><span class="material-symbols-outlined animate-spin text-2xl">sync</span></div>';
+
+            apiCall("getLatestTasks", {
+                filterCategory: filterVal
+            }).then(function(response) {
+                if(response && response.success) {
+                    container.innerHTML = '';
+                    if(response.data.length === 0) {
+                        container.innerHTML = '<div class="text-center py-10 text-white/40 text-xs">No unexecuted tasks found.</div>'; return;
+                    }
+                    response.data.forEach(task => {
+                        const style = catStyles[task.category] ? catStyles[task.category].style : "bg-white/10 text-white/60 border-white/20";
+                        const linkHtml = task.link ? `<a href="${task.link}" target="_blank" class="hover:text-white transition-colors" title="Open Attachment"><span class="material-symbols-outlined text-[14px]">link</span></a>` : '';
+
+                        const assigneeInitials = getInitials(task.assignee);
+
+                        const html = `
+                        <div class="bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 p-3.5 rounded-xl transition-all cursor-pointer">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase ${style}">${task.category}</span>
+                                <div class="flex items-center gap-2 text-white/50">
+                                    <span class="text-[10px] font-bold">${task.targetDate}</span>
+                                    ${linkHtml}
+                                </div>
+                            </div>
+                            <h4 class="text-xs font-bold text-white mb-1">${task.title}</h4>
+                            <div class="flex justify-between items-end mt-2">
+                                <span class="text-[9px] ${task.status === 'Pending' ? 'text-white/40' : 'text-green-400'} font-bold flex items-center gap-1">${task.status}</span>
+
+                                <div class="h-5 w-5 rounded-full bg-blue-600 flex items-center justify-center text-[7px] font-bold text-white border border-white/20" title="${task.assignee}">
+                                    ${assigneeInitials}
+                                </div>
+                            </div>
+                        </div>`;
+                        container.innerHTML += html;
+                    });
+                } else {
+                    container.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Failed to load backlog.</div>';
+                    console.error("getLatestTasks failed:", response);
+                }
+            }).catch(function(err) {
+                container.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Connection error.</div>';
+                console.error("getLatestTasks error:", err);
+            });
+        }
+
+        // Start App
+
+        // 1. Fetch Executors (Managers) dari Backend
+        function fetchExecutors() {
+            apiCall("getExecutors")
+                .then(function(response) {
+                    const select = document.getElementById('taskAssignee');
+                    select.innerHTML = '<option value="" disabled selected class="text-black">Executed by...</option>';
+                    if(response && response.success) {
+                        response.data.forEach(name => {
+                            select.innerHTML += `<option value="${name}" class="text-black">${name}</option>`;
+                        });
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getExecutors error:", err);
+                });
+        }
+
+        // 3. Panggil fetchExecutors di awal loading
+
+        // === STRATEGY MODAL LOGIC ===
+        const strategyModal = document.getElementById('createStrategyModal');
+        const strategyModalContent = document.getElementById('strategyModalContent');
+
+        function openStrategyModal() {
+            strategyModal.classList.remove('hidden');
+            setTimeout(() => {
+                strategyModal.classList.remove('opacity-0');
+                strategyModalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeStrategyModal() {
+            strategyModal.classList.add('opacity-0');
+            strategyModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                strategyModal.classList.add('hidden');
+                document.getElementById('newStrategyForm').reset(); // Fix ID Form
+            }, 300);
+        }
+
+        // ==========================================
+        // STRATEGY LOGIC: FETCH PIC & SUBMIT FORM
+        // ==========================================
+
+        // 1. Fetch data Supervisor dari Backend untuk Dropdown
+        function fetchStrategyExecutors() {
+            apiCall("getStrategyExecutors")
+                .then(function(response) {
+                    const select = document.getElementById('strategyPicAssignee');
+                    if (!select) return; 
+
+                    select.innerHTML = '<option value="" disabled selected class="text-black">Select PIC...</option>';
+
+                    if(response && response.success) {
+                        response.data.forEach(name => {
+                            select.innerHTML += `<option value="${name}" class="text-black">${name}</option>`;
+                        });
+                    } else {
+                        select.innerHTML = `<option value="" disabled class="text-red-500">Error: ${(response && response.message) || "Failed to load PICs"}</option>`;
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getStrategyExecutors error:", err);
+                });
+        }
+
+        // Panggil fungsi ini saat dokumen selesai diload
+
+        // === UPDATE PAYLOAD DI newStrategyForm ===
+        document.getElementById('newStrategyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `Deploying...`;
+            btn.disabled = true;
+
+            const payload = {
+                title: document.getElementById('strategyTitle').value,
+                assignee: document.getElementById('strategyPicAssignee').value,
+                category: document.getElementById('strategyType').value,
+                deadline: document.getElementById('strategyDeadline').value,
+                desc: document.getElementById('strategyDesc').value,
+                link: document.getElementById('strategyLink').value
+            };
+
+            apiCall("assignNewStrategy", payload)
+                .then(function(response) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    if(response && response.success) {
+                        closeStrategyModal(); 
+                        document.getElementById('newStrategyForm').reset(); 
+                        loadStrategies();
+                    } else { alert("Gagal: " + ((response && response.message) || "Failed to deploy strategy.")); }
+                })
+                .catch(function(err) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    console.error("assignNewStrategy error:", err);
+                    alert("Connection error.");
+                });
+        });
+
+        // ==========================================
+        // STRATEGY KANBAN BOARD RENDER LOGIC
+        // ==========================================
+        let globalStrategies = [];
+
+        function loadStrategies() {
+            apiCall("getAssignedStrategies")
+                .then(function(response) {
+                    if(response && response.success) {
+                        globalStrategies = response.data;
+                        renderKanbanBoard();
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getAssignedStrategies error:", err);
+                });
+        }
+
+        // Pastikan getInitials membersihkan tanda kurung, misal: "Andi (Paris)" -> "AN"
+        function getCleanInitials(name) {
+            if (!name) return "?";
+            const cleanName = name.replace(/\(.*\)/g, '').trim(); 
+            const parts = cleanName.split(' ');
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return cleanName.substring(0, 2).toUpperCase();
+        }
+
+        // === UPDATE RENDER KANBAN (Biar bisa diklik) ===
+        function renderKanbanBoard() {
+            const cols = {
+                "Planned": document.getElementById('col-planned'),
+                "Executing": document.getElementById('col-executing'),
+                "Review": document.getElementById('col-review'),
+                "Done": document.getElementById('col-done')
+            };
+            const counts = { "Planned": 0, "Executing": 0, "Review": 0, "Done": 0 };
+
+            Object.values(cols).forEach(col => col.innerHTML = '');
+            const filterMonth = document.getElementById('strategyMonthFilter').value;
+            const stratStyles = {
+                "Acquisition": "bg-orange-500/20 text-orange-300",
+                "Retention": "bg-blue-500/20 text-blue-300",
+                "Curriculum": "bg-pink-500/20 text-pink-300",
+                "Event": "bg-purple-500/20 text-purple-300"
+            };
+
+            globalStrategies.forEach(strat => {
+                if (filterMonth !== "All") {
+                    const stratDate = new Date(strat.deadline);
+                    if (stratDate.getMonth() + 1 !== parseInt(filterMonth)) return; 
+                }
+
+                let statusKey = strat.status;
+                if(!cols[statusKey]) statusKey = "Planned"; 
+
+                const style = stratStyles[strat.category] || "bg-white/10 text-white/50";
+                const initials = getCleanInitials(strat.assignee);
+
+                // TAMBAHKAN onclick="openViewStrategyModal('${strat.id}')"
+                const cardHtml = `
+                <div onclick="openViewStrategyModal('${strat.id}')" class="glass-panel p-4 rounded-2xl cursor-pointer hover:border-white/30 hover:-translate-y-1 transition-all group mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] ${style} px-2 py-0.5 rounded font-bold uppercase tracking-wider">${strat.category}</span>
+                        <span class="text-[9px] bg-white/10 text-white/60 px-1.5 py-0.5 rounded flex items-center gap-1 font-bold">
+                            <span class="material-symbols-outlined text-[10px]">schedule</span> ${strat.deadline}
+                        </span>
+                    </div>
+                    <h4 class="text-sm font-bold text-white mb-2 leading-snug">${strat.title}</h4>
+                    <div class="flex justify-between items-end mt-4">
+                        <div class="flex items-center gap-1 text-white/40 text-[10px]">
+                            ${strat.link ? '<span class="material-symbols-outlined text-[14px] text-blue-400">link</span>' : ''}
+                        </div>
+                        <div class="h-6 w-6 rounded-full bg-slate-600 flex items-center justify-center text-[9px] font-bold text-white border border-[#090b0c] shadow-md" title="${strat.assignee}">
+                            ${initials}
+                        </div>
+                    </div>
+                </div>`;
+
+                cols[statusKey].innerHTML += cardHtml;
+                counts[statusKey]++;
+            });
+
+            Object.keys(counts).forEach(key => {
+                document.getElementById(`count-${key.toLowerCase()}`).textContent = counts[key];
+                if(counts[key] === 0) cols[key].innerHTML = `<div class="text-center py-10 text-white/30 text-xs italic">No strategies ${key.toLowerCase()}.</div>`;
+            });
+        }
+
+        // === FUNGSI BUKA MODAL DETAIL & UPDATE STATUS ===
+        function openViewStrategyModal(id) {
+            const strat = globalStrategies.find(s => s.id === id);
+            if(!strat) return;
+
+            document.getElementById('viewStratCat').textContent = strat.category;
+            document.getElementById('viewStratTitle').textContent = strat.title;
+            document.getElementById('viewStratPIC').textContent = strat.assignee;
+            document.getElementById('viewStratDate').textContent = strat.deadline;
+            document.getElementById('viewStratDesc').textContent = strat.desc || "No additional details provided.";
+            document.getElementById('viewStratStatus').value = strat.status || "Planned";
+            document.getElementById('viewStratId').value = strat.id;
+
+            const linkContainer = document.getElementById('viewStratLinkContainer');
+            if(strat.link && strat.link.trim() !== "") {
+                linkContainer.classList.remove('hidden');
+                document.getElementById('viewStratLink').href = strat.link;
+            } else {
+                linkContainer.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('viewStrategyModal');
+            const content = document.getElementById('viewStrategyContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+
+        function closeViewStrategyModal() {
+            const modal = document.getElementById('viewStrategyModal');
+            const content = document.getElementById('viewStrategyContent');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function saveStrategyStatus() {
+            const stratId = document.getElementById('viewStratId').value;
+            const newStatus = document.getElementById('viewStratStatus').value;
+            const btn = document.getElementById('btnUpdateStrat');
+
+            btn.innerHTML = "Saving..."; btn.disabled = true;
+
+            apiCall("updateStrategyStatus", {
+                stratId: stratId,
+                newStatus: newStatus
+            }).then(function(res) {
+                btn.innerHTML = "Save"; btn.disabled = false;
+                if(res && res.success) {
+                    closeViewStrategyModal();
+                    loadStrategies();
+                } else { alert((res && res.message) || "Failed to update strategy."); }
+            }).catch(function(err) {
+                btn.innerHTML = "Save"; btn.disabled = false;
+                console.error("updateStrategyStatus error:", err);
+                alert("Connection error.");
+            });
+        }
+
+        // Jalankan saat tab filter diganti
+        document.getElementById('strategyMonthFilter').addEventListener('change', renderKanbanBoard);
+        document.getElementById('strategyYearFilter').addEventListener('change', renderKanbanBoard);
+
+
+        // ==========================================
+        // LEADERSHIP KPI LOGIC (SUBMIT & RENDER)
+        // ==========================================
+        let globalLeadershipKPIs = [];
+
+        // 1. Submit Form KPI
+        document.getElementById('kpiSetForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Deploying...`;
+            btn.disabled = true;
+
+            const payload = {
+                role: document.getElementById('kpiRole').value,
+                name: document.getElementById('kpiName').value,
+                target: document.getElementById('kpiTarget').value,
+                weight: document.getElementById('kpiWeight').value,
+                notes: document.getElementById('kpiNotes').value,
+                deadline: document.getElementById('kpiDeadline').value
+            };
+
+            apiCall("deployLeadershipKPI", payload)
+                .then(function(response) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    if(response && response.success) {
+                        document.getElementById('kpiSetForm').reset(); 
+                        loadLeadershipKPIs();
+                    } else {
+                        alert("Failed: " + ((response && response.message) || "Failed to deploy KPI."));
+                    }
+                })
+                .catch(function(err) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    console.error("deployLeadershipKPI error:", err);
+                    alert("Connection error to server.");
+                });
+        });
+
+        // 2. Tarik Data KPI
+        function loadLeadershipKPIs() {
+            apiCall("getLeadershipKPIs")
+                .then(function(response) {
+                    if(response && response.success) {
+                        globalLeadershipKPIs = response.data;
+                        renderKPIPillars();
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getLeadershipKPIs error:", err);
+                });
+        }
+
+        // 3. Mesin Pembuat Kartu, Kalkulator Bobot & Filter
+        function renderKPIPillars() {
+            const cols = {
+                "Manager": document.getElementById('kpi-col-manager'),
+                "Supervisor": document.getElementById('kpi-col-supervisor'),
+                "HRD": document.getElementById('kpi-col-hrd')
+            };
+
+            const weights = { "Manager": 0, "Supervisor": 0, "HRD": 0 };
+            
+            const styles = {
+                "Manager": { color: "blue", bg: "bg-blue-600", text: "text-blue-300", border: "border-blue-500/50" },
+                "Supervisor": { color: "purple", bg: "bg-purple-600", text: "text-purple-300", border: "border-purple-500/50" },
+                "HRD": { color: "orange", bg: "bg-orange-600", text: "text-orange-300", border: "border-orange-500/50" }
+            };
+
+            Object.values(cols).forEach(c => { if(c) c.innerHTML = ''; });
+
+            // Ambil Nilai Filter
+            const fMonth = document.getElementById('kpiMonthFilter').value;
+            const fYear = document.getElementById('kpiYearFilter').value;
+
+            globalLeadershipKPIs.forEach(kpi => {
+                const role = kpi.role;
+                if(!cols[role]) return;
+
+                // Logika Filter Tanggal Anti-Error
+                if (kpi.deadline) {
+                    const kDate = new Date(kpi.deadline);
+                    // Cek apakah tanggal valid terbaca oleh JavaScript
+                    if (!isNaN(kDate)) {
+                        if (fMonth !== "All" && (kDate.getMonth() + 1) !== parseInt(fMonth)) return;
+                        if (fYear !== "All" && kDate.getFullYear() !== parseInt(fYear)) return;
+                    } else {
+                        // Fallback aman: Kalau format tanggal kacau, filter pakai pencarian teks (String Includes)
+                        if (fYear !== "All" && !kpi.deadline.includes(fYear)) return;
+                    }
+                }
+
+                weights[role] += parseInt(kpi.weight);
+                const s = styles[role];
+                
+                // Visual & Toggle Status Achieved
+                const isAchieved = kpi.status === "Achieved";
+                const cardOpacity = isAchieved ? "opacity-60" : "opacity-100";
+                
+                const statusSelect = `
+                    <select onchange="changeKpiStatus('${kpi.id}', this)" class="text-[10px] bg-black/40 border border-white/10 ${isAchieved ? 'text-green-400' : 'text-white'} px-2 py-1 rounded font-bold outline-none cursor-pointer">
+                        <option value="Pending" ${!isAchieved ? 'selected' : ''} class="text-black">⏳ Pending</option>
+                        <option value="Achieved" ${isAchieved ? 'selected' : ''} class="text-black">✅ Achieved</option>
+                    </select>
+                `;
+
+                // Update HTML Kartu: Tambahkan onclick dan cursor-pointer
+                const html = `
+                <div onclick="linkKpiToStrategy('${kpi.id}', '${kpi.name}')" class="bg-black/20 p-4 rounded-2xl border border-white/5 hover:${s.border} transition-all group cursor-pointer mb-3 hover:scale-[1.02] active:scale-95">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-sm font-bold text-white leading-tight group-hover:${s.text} transition-colors pr-2">${kpi.name}</h4>
+                        <span class="text-[10px] ${s.bg} text-white px-1.5 py-0.5 rounded font-bold shadow-md whitespace-nowrap">${kpi.weight}%</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-[9px] text-white/40 font-bold uppercase mb-2">
+                        <span class="material-symbols-outlined text-[12px]">event</span> Deadline: ${kpi.deadline || "No date"}
+                    </div>
+                    <p class="text-[10px] text-white/50 mb-4 line-clamp-2">${kpi.notes}</p>
+                    
+                    <div class="flex justify-between items-center pt-3 border-t border-white/10">
+                        <div>
+                            <span class="text-[9px] text-white/40 uppercase font-bold tracking-wider block mb-0.5">Target:</span>
+                            <span class="text-xs font-black text-white">${kpi.target}</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-blue-400 font-bold text-[9px] uppercase">
+                            View Strategy <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </div>
+                    </div>
+                </div>`;
+
+                cols[role].innerHTML += html;
+            });
+
+            // Hitung & Update Badge Bobot Total
+            Object.keys(weights).forEach(r => {
+                const weightBadge = document.getElementById(`kpi-weight-${r.toLowerCase()}`);
+                const s = styles[r];
+                
+                if(weightBadge) {
+                    weightBadge.textContent = `Total: ${weights[r]}%`;
+                    if(weights[r] > 100) {
+                        weightBadge.className = `text-[10px] bg-red-600 text-white px-2 py-1 rounded font-bold shadow-[0_0_10px_rgba(220,38,38,0.8)] transition-all`;
+                    } else {
+                        weightBadge.className = `text-[10px] bg-${s.color}-500/20 px-2 py-1 rounded ${s.text} font-bold border ${s.border} transition-all`;
+                    }
+                }
+                if(weights[r] === 0 && cols[r]) cols[r].innerHTML = `<div class="text-center py-10 text-white/30 text-xs italic">No KPI defined yet.</div>`;
+            });
+        }
+
+        // 4. Fungsi Mengganti Status KPI (Diklik dari dropdown kartu)
+        function changeKpiStatus(kpiId, selectElement) {
+            const newStatus = selectElement.value;
+            selectElement.disabled = true;
+            selectElement.classList.add('opacity-50');
+
+            apiCall("updateLeadershipKPIStatus", {
+                kpiId: kpiId,
+                newStatus: newStatus
+            }).then(function(res) {
+                if(res && res.success) {
+                    loadLeadershipKPIs();
+                } else {
+                    alert((res && res.message) || "Failed to update KPI.");
+                    selectElement.disabled = false;
+                    selectElement.classList.remove('opacity-50');
+                }
+            }).catch(function(err) {
+                console.error("updateLeadershipKPIStatus error:", err);
+                alert("Connection error.");
+                selectElement.disabled = false;
+                selectElement.classList.remove('opacity-50');
+            });
+        }
+
+        // ==========================================
+        // TAB 4: REVIEWS (SUPERVISOR FEEDBACK LOGIC)
+        // ==========================================
+        let managerFeedbackBranches = [];
+        let activeFeedbackBranch = null;
+
+        function loadManagerFeedbackBranches() {
+          const grid = document.getElementById("managerFeedbackBranchGrid");
+          if (!grid) return;
+
+          grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+              Loading branches...
+            </div>
+          `;
+
+          apiCall("getManagerFeedbackBranches")
+            .then(function(res) {
+              if (!res || !res.success) {
+                grid.innerHTML = `
+                  <div class="col-span-full text-center py-12 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-xl">
+                    Failed to load branches.
+                  </div>
+                `;
+                return;
+              }
+
+              managerFeedbackBranches = res.data || [];
+              renderManagerFeedbackBranchGrid();
+            })
+            .catch(function(err) {
+              console.error("getManagerFeedbackBranches error:", err);
+              grid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-xl">
+                  Connection error.
+                </div>
+              `;
+            });
+        }
+
+        function renderManagerFeedbackBranchGrid() {
+          const grid = document.getElementById("managerFeedbackBranchGrid");
+          const count = document.getElementById("managerFeedbackBranchCount");
+
+          if (!grid) return;
+
+          if (count) {
+            count.textContent = `${managerFeedbackBranches.length} Branches`;
+          }
+          grid.innerHTML = "";
+
+          if (managerFeedbackBranches.length === 0) {
+            grid.innerHTML = `
+              <div class="col-span-full text-center py-12 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+                No branches found.
+              </div>
+            `;
+            return;
+          }
+
+          managerFeedbackBranches.forEach(branch => {
+            const isActive = activeFeedbackBranch === branch.name;
+            const activeClass = isActive
+              ? "bg-blue-600/20 border-blue-500/50"
+              : "bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/5";
+
+            grid.insertAdjacentHTML("beforeend", `
+              <div onclick="selectManagerFeedbackBranch('${escapeForOnclick(branch.name)}')" class="${activeClass} border p-4 rounded-2xl cursor-pointer transition-all group relative overflow-hidden">
+                ${isActive ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>' : ''}
+
+                <div class="flex justify-between items-start gap-3 ${isActive ? 'pl-2' : ''}">
+                  <div>
+                    <h4 class="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">${branch.name}</h4>
+                    <p class="text-[10px] text-white/40 mt-1">
+                      ${branch.spv ? `SPV: ${branch.spv}` : "Supervisor Feedback"}
+                    </p>
+                  </div>
+
+                  <div class="text-right">
+                    <span class="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded font-bold">
+                      ${branch.count || 0}
+                    </span>
+                    <p class="text-[9px] text-white/30 mt-1">notes</p>
+                  </div>
+                </div>
+              </div>
+            `);
+          });
+        }
+
+        function selectManagerFeedbackBranch(branchName) {
+          activeFeedbackBranch = branchName;
+          renderManagerFeedbackBranchGrid();
+
+          const emptyState = document.getElementById("managerFeedbackEmptyState");
+          if (emptyState) {
+            emptyState.classList.add("opacity-0");
+            setTimeout(() => emptyState.classList.add("hidden"), 250);
+          }
+
+          document.getElementById("managerFeedbackBranchTitle").textContent = branchName;
+          loadManagerFeedbackByBranch();
+        }
+
+        function refreshSelectedBranchFeedback() {
+          if (!activeFeedbackBranch) return;
+          loadManagerFeedbackByBranch();
+        }
+
+        function clearManagerFeedbackFilters() {
+          document.getElementById("managerFeedbackDateFilter").value = "";
+          document.getElementById("managerFeedbackMonthFilter").value = "All";
+          document.getElementById("managerFeedbackYearFilter").value = "2026";
+
+          if (activeFeedbackBranch) {
+            loadManagerFeedbackByBranch();
+          }
+        }
+
+        function loadManagerFeedbackByBranch() {
+          const list = document.getElementById("managerFeedbackList");
+          const count = document.getElementById("managerFeedbackCount");
+
+          if (!activeFeedbackBranch || !list) return;
+
+          list.innerHTML = `
+            <div class="text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+              Loading feedback...
+            </div>
+          `;
+          if (count) count.textContent = "0";
+
+          const filters = {
+            branchName: activeFeedbackBranch,
+            date: document.getElementById("managerFeedbackDateFilter").value || "",
+            month: document.getElementById("managerFeedbackMonthFilter").value || "All",
+            year: document.getElementById("managerFeedbackYearFilter").value || "All"
+          };
+
+          apiCall("getManagerFeedbackByBranch", filters)
+            .then(function(res) {
+              if (!res || !res.success) {
+                console.error("getManagerFeedbackByBranch failed:", res);
+                renderManagerFeedbackList([]);
+                return;
+              }
+
+              renderManagerFeedbackList(res.data || []);
+            })
+            .catch(function(err) {
+              console.error("getManagerFeedbackByBranch error:", err);
+              renderManagerFeedbackList([]);
+            });
+        }
+
+        function renderManagerFeedbackList(items) {
+          const list = document.getElementById("managerFeedbackList");
+          const count = document.getElementById("managerFeedbackCount");
+
+          if (count) {
+            count.textContent = items.length;
+          }
+
+          if (!items.length) {
+            list.innerHTML = `
+              <div class="text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-xl">
+                No feedback found for this branch/filter.
+              </div>
+            `;
+            return;
+          }
+
+          list.innerHTML = "";
+
+          items.forEach(item => {
+            const linkHtml = item.referenceLink
+              ? `<a href="${item.referenceLink}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">link</span>
+                  Reference
+                </a>`
+              : `<span class="text-[10px] text-white/30">No reference link</span>`;
+
+            list.insertAdjacentHTML("beforeend", `
+              <div class="bg-white/5 border border-white/10 p-4 rounded-2xl hover:border-white/20 transition-all">
+                <div class="flex justify-between items-start gap-3 mb-3">
+                  <div>
+                    <h4 class="text-sm font-bold text-white">${item.type || "Feedback"}</h4>
+                    <p class="text-[10px] text-white/40 mt-1">${item.date || "-"} • ${item.agendaTitle || "General"}</p>
+                    <p class="text-[10px] text-white/30">By: ${item.createdBy || "Unknown"}</p>
+                  </div>
+
+                  <span class="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded-full font-bold uppercase">
+                    ${item.branchName || activeFeedbackBranch}
+                  </span>
+                </div>
+
+                <p class="text-xs text-white/75 leading-relaxed bg-black/20 border border-white/5 p-3 rounded-xl mb-3">
+                  ${item.note || "No notes."}
+                </p>
+
+                <div class="flex justify-between items-center gap-3 pt-2 border-t border-white/10">
+                  <span class="text-[10px] text-white/40">${item.timestamp || ""}</span>
+                  ${linkHtml}
+                </div>
+              </div>
+            `);
+          });
+        }
+
+        function escapeForOnclick(value) {
+          return String(value || "").replace(/'/g, "\\'");
+        }
+
+        // ==========================================
+        // THE VAULT (FILES) LOGIC
+        // ==========================================
+        let vaultCategories = [];
+        let vaultFiles = [];
+        let activeVaultCategory = "All Files";
+
+        // 1. Tarik Data Utama
+        function loadVaultData() {
+            apiCall("getVaultData")
+                .then(function(res) {
+                    if(res && res.success) {
+                        vaultCategories = res.categories || [];
+                        vaultFiles = res.files || [];
+                        renderVaultCategories();
+                        renderVaultFiles();
+                        populateCategoryDropdown();
+                    } else {
+                        console.error("getVaultData failed:", res);
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getVaultData error:", err);
+                });
+        }
+
+        // 2. Render Header Kategori (Pills)
+        function renderVaultCategories() {
+            const container = document.getElementById('vaultCategoriesList');
+            let html = '';
+            
+            // Tombol "All Files"
+            const allActive = activeVaultCategory === "All Files" ? "bg-white text-black font-black" : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+            html += `<button onclick="setVaultCategory('All Files')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors ${allActive}">All Files</button>`;
+
+            // Tombol Kategori Dinamis
+            vaultCategories.forEach(cat => {
+                const isActive = activeVaultCategory === cat.name;
+                // Kalau aktif pakai warna neonnya, kalau pasif pakai style biasa
+                const style = isActive 
+                    ? `bg-${cat.color}-500 text-white font-black shadow-[0_0_10px_var(--tw-shadow-color)] shadow-${cat.color}-500/50` 
+                    : `bg-white/5 border border-white/10 text-white/70 hover:bg-white/10`;
+                
+                html += `<button onclick="setVaultCategory('${cat.name}')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${style}">${cat.name}</button>`;
+            });
+
+            // Tombol Add Category
+            html += `<button onclick="openAddCatModal()" class="px-3 py-1.5 rounded-full border border-dashed border-white/30 text-white/50 hover:text-white hover:border-white text-[11px] font-bold whitespace-nowrap transition-all flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">add</span> Add Category</button>`;
+
+            container.innerHTML = html;
+        }
+
+        function setVaultCategory(catName) {
+            activeVaultCategory = catName;
+            renderVaultCategories();
+            renderVaultFiles();
+        }
+
+        // 3. Render Grid File Cards (Update: Ada tombol Edit)
+        function renderVaultFiles() {
+            const container = document.getElementById('vaultFilesGrid');
+            const searchQ = document.getElementById('vaultSearch').value.toLowerCase();
+            
+            container.innerHTML = '';
+            let foundCount = 0;
+
+            // Kita loop vaultFiles aslinya agar index-nya akurat
+            vaultFiles.forEach((file, index) => {
+                const matchCat = activeVaultCategory === "All Files" || file.category === activeVaultCategory;
+                const matchSearch = file.title.toLowerCase().includes(searchQ) || file.desc.toLowerCase().includes(searchQ);
+                
+                if (matchCat && matchSearch) {
+                    foundCount++;
+                    const catObj = vaultCategories.find(c => c.name === file.category);
+                    const color = catObj ? catObj.color : 'gray';
+
+                    const html = `
+                    <div class="glass-panel p-3.5 rounded-2xl border border-white/5 hover:border-${color}-500/50 hover:bg-white/5 transition-all group flex flex-col justify-between h-[140px]">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-${color}-500/20 text-${color}-400 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider line-clamp-1 max-w-[70%]">${file.category}</span>
+                                <div class="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="openEditFileModal(${index})" class="material-symbols-outlined text-[15px] text-white/50 hover:text-yellow-400 transition-colors bg-black/40 p-1 rounded-md">edit</button>
+                                    <a href="${file.link}" target="_blank" class="material-symbols-outlined text-[15px] text-white/50 hover:text-${color}-400 transition-colors bg-black/40 p-1 rounded-md">open_in_new</a>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-white text-xs mb-1 leading-snug line-clamp-2 group-hover:text-${color}-300 transition-colors">${file.title}</h4>
+                            <p class="text-[9px] text-white/50 line-clamp-2 leading-relaxed">${file.desc}</p>
+                        </div>
+                    </div>`;
+                    container.innerHTML += html;
+                }
+            });
+
+            if(foundCount === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-white/30 text-xs italic">No files found.</div>`;
+            }
+        }
+
+        // 4. Update Dropdown di Form Add File
+        function populateCategoryDropdown() {
+            const select = document.getElementById('newFileCategory');
+            select.innerHTML = '';
+            vaultCategories.forEach(cat => {
+                select.innerHTML += `<option value="${cat.name}" class="text-black">${cat.name}</option>`;
+            });
+        }
+
+        // 5. MODALS LOGIC
+        function openAddCatModal() { document.getElementById('addCatModal').classList.remove('hidden'); setTimeout(() => { document.getElementById('addCatModal').classList.remove('opacity-0'); document.getElementById('addCatContent').classList.remove('scale-95'); }, 10); }
+        function closeAddCatModal() { document.getElementById('addCatModal').classList.add('opacity-0'); document.getElementById('addCatContent').classList.add('scale-95'); setTimeout(() => { document.getElementById('addCatModal').classList.add('hidden'); document.getElementById('formAddCategory').reset(); }, 300); }
+        
+        function openAddFileModal() { document.getElementById('addFileModal').classList.remove('hidden'); setTimeout(() => { document.getElementById('addFileModal').classList.remove('opacity-0'); document.getElementById('addFileContent').classList.remove('scale-95'); }, 10); }
+        function closeAddFileModal() { document.getElementById('addFileModal').classList.add('opacity-0'); document.getElementById('addFileContent').classList.add('scale-95'); setTimeout(() => { document.getElementById('addFileModal').classList.add('hidden'); document.getElementById('formAddFile').reset(); }, 300); }
+
+        // 6. Submit Forms
+        document.getElementById('formAddCategory').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveCat');
+            btn.innerText = "Saving..."; btn.disabled = true;
+
+            apiCall("addVaultCategory", {
+                name: document.getElementById('newCatName').value
+            }).then(function(res) {
+                btn.innerText = "Save"; btn.disabled = false;
+                if (!res || !res.success) {
+                    alert((res && res.message) || "Failed to save category.");
+                    return;
+                }
+                closeAddCatModal();
+                loadVaultData();
+            }).catch(function(err) {
+                btn.innerText = "Save"; btn.disabled = false;
+                console.error("addVaultCategory error:", err);
+                alert("Connection error.");
+            });
+        });
+
+        document.getElementById('formAddFile').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveFile');
+            btn.innerText = "Saving..."; btn.disabled = true;
+
+            const payload = {
+                title: document.getElementById('newFileTitle').value,
+                desc: document.getElementById('newFileDesc').value,
+                category: document.getElementById('newFileCategory').value,
+                link: document.getElementById('newFileLink').value
+            };
+
+            apiCall("addVaultFile", payload)
+                .then(function(res) {
+                    btn.innerText = "Save File"; btn.disabled = false;
+                    if (!res || !res.success) {
+                        alert((res && res.message) || "Failed to save file.");
+                        return;
+                    }
+                    closeAddFileModal();
+                    loadVaultData();
+                })
+                .catch(function(err) {
+                    btn.innerText = "Save File"; btn.disabled = false;
+                    console.error("addVaultFile error:", err);
+                    alert("Connection error.");
+                });
+        });
+
+        // Trigger saat web awal dibuka
+
+        // ==========================================
+        // EDIT FILE LOGIC
+        // ==========================================
+        
+        function openEditFileModal(fileIndex) {
+            const file = vaultFiles[fileIndex];
+            
+            // Isi dropdown kategori di modal Edit
+            const select = document.getElementById('editFileCategory');
+            select.innerHTML = '';
+            vaultCategories.forEach(cat => {
+                select.innerHTML += `<option value="${cat.name}" class="text-black" ${cat.name === file.category ? 'selected' : ''}>${cat.name}</option>`;
+            });
+
+            // Isi nilai form dari data file yang diklik
+            document.getElementById('editFileOldTitle').value = file.title;
+            document.getElementById('editFileTitle').value = file.title;
+            document.getElementById('editFileLink').value = file.link;
+            document.getElementById('editFileDesc').value = file.desc;
+
+            // Tampilkan Modal
+            const m = document.getElementById('editFileModal');
+            m.classList.remove('hidden');
+            setTimeout(() => { m.classList.remove('opacity-0'); document.getElementById('editFileContent').classList.remove('scale-95'); }, 10);
+        }
+
+        function closeEditFileModal() {
+            const m = document.getElementById('editFileModal');
+            m.classList.add('opacity-0'); document.getElementById('editFileContent').classList.add('scale-95');
+            setTimeout(() => { m.classList.add('hidden'); document.getElementById('formEditFile').reset(); }, 300);
+        }
+
+        document.getElementById('formEditFile').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnUpdateFile');
+            const originalTxt = btn.innerText;
+            btn.innerText = "Updating..."; btn.disabled = true;
+
+            const payload = {
+                oldTitle: document.getElementById('editFileOldTitle').value,
+                title: document.getElementById('editFileTitle').value,
+                desc: document.getElementById('editFileDesc').value,
+                category: document.getElementById('editFileCategory').value,
+                link: document.getElementById('editFileLink').value
+            };
+
+            apiCall("editVaultFile", payload)
+                .then(function(res) {
+                    btn.innerText = originalTxt; btn.disabled = false;
+                    if(res && res.success) {
+                        closeEditFileModal();
+                        loadVaultData();
+                    } else {
+                        alert("Error: " + ((res && res.message) || "Failed to update file."));
+                    }
+                })
+                .catch(function(err) {
+                    btn.innerText = originalTxt; btn.disabled = false;
+                    console.error("editVaultFile error:", err);
+                    alert("Connection error.");
+                });
+        });
+
+        // ==========================================
+        // WORKSPACE: PROFILE & ORG EDITOR LOGIC
+        // ==========================================
+        let globalStaffList = [];
+
+        // 1. Load Data Profil & Struktur
+        function loadWorkspaceProfile() {
+            const nameEl = document.getElementById('wsUserName');
+            const roleEl = document.getElementById('wsUserRole');
+            if(nameEl) nameEl.innerText = "Loading...";
+            if(roleEl) roleEl.innerText = "...";
+
+            apiCall("getWorkspaceProfile")
+                .then(function(res) {
+                    if(res && res.success) {
+                        if(nameEl) nameEl.innerText = res.profile.name;
+                        if(roleEl) roleEl.innerText = res.profile.role;
+
+                        globalStaffList = res.staff;
+                        renderOrgChart(res.staff);
+                        populateParentDropdown(res.staff);
+                    } else {
+                        console.error("Error loading workspace:", res && res.message);
+                    }
+                })
+                .catch(function(err) {
+                    console.error("getWorkspaceProfile error:", err);
+                });
+        }
+
+        // 2. Render Visual Hirarki
+        function renderOrgChart(staff) {
+            const container = document.getElementById('orgChart');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            if(!staff || staff.length === 0) {
+                container.innerHTML = '<div class="text-white/30 italic m-auto">No organizational data found.</div>';
+                return;
+            }
+
+            const tree = document.createElement('div');
+            tree.className = 'flex flex-col items-center gap-10 w-full pt-4';
+            
+            // Cari Root (CEO)
+            const ceo = staff.find(s => s.role === "CEO" || s.parent === "");
+            if(ceo) {
+                const rootNode = createOrgNode(ceo, staff);
+                tree.appendChild(rootNode);
+            } else {
+                 container.innerHTML = '<div class="text-red-400/50 italic m-auto">Root CEO not found in database.</div>';
+            }
+            
+            container.appendChild(tree);
+        }
+
+        function createOrgNode(person, allStaff) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex flex-col items-center gap-6 relative';
+
+            // Kartu Personil
+            const card = document.createElement('div');
+            // Bedakan warna CEO, Manager, dan Staff biasa
+            let borderColor = 'border-blue-500/30';
+            let iconColor = 'text-blue-400 bg-blue-600/20';
+            if(person.role === "CEO") { borderColor = 'border-purple-500/50'; iconColor = 'text-purple-400 bg-purple-600/20'; }
+            else if(person.role === "Manager") { borderColor = 'border-green-500/40'; iconColor = 'text-green-400 bg-green-600/20'; }
+
+            card.className = `glass-panel px-6 py-4 rounded-2xl border ${borderColor} text-center min-w-[200px] shadow-lg relative z-10`;
+            card.innerHTML = `
+                <div class="h-12 w-12 ${iconColor} rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                    <span class="material-symbols-outlined text-[24px]">person</span>
+                </div>
+                <h4 class="text-white font-bold text-sm mb-0.5">${person.name}</h4>
+                <p class="text-[10px] text-white/50 font-bold uppercase tracking-widest">${person.role}</p>
+            `;
+            wrapper.appendChild(card);
+
+            // Cari anak buah (Reports To)
+            const children = allStaff.filter(s => s.parent === person.name);
+            
+            if(children.length > 0) {
+                // Container untuk anak buah
+                const childContainer = document.createElement('div');
+                childContainer.className = 'flex gap-8 items-start relative pt-6';
+                
+                // Garis Konektor Vertikal (Dari parent ke garis horizontal)
+                const verticalLine = document.createElement('div');
+                verticalLine.className = 'absolute top-0 left-1/2 -translate-x-1/2 w-[2px] h-6 bg-white/20 -z-10';
+                childContainer.appendChild(verticalLine);
+
+                // Garis Konektor Horizontal (Kalau anak buah lebih dari 1)
+                if(children.length > 1) {
+                    const horizontalLine = document.createElement('div');
+                    horizontalLine.className = 'absolute top-6 left-[10%] right-[10%] h-[2px] bg-white/20 -z-10';
+                    childContainer.appendChild(horizontalLine);
+                }
+
+                children.forEach(child => {
+                    const childNode = createOrgNode(child, allStaff);
+                    // Garis konektor vertikal ke tiap anak
+                    childNode.innerHTML += '<div class="absolute -top-6 left-1/2 -translate-x-1/2 w-[2px] h-6 bg-white/20 -z-10"></div>';
+                    childContainer.appendChild(childNode);
+                });
+                
+                wrapper.appendChild(childContainer);
+            }
+
+            return wrapper;
+        }
+
+        // 3. Dropdown Parent untuk Form
+        function populateParentDropdown(staff) {
+            const select = document.getElementById('staffParent');
+            if(!select) return;
+            select.innerHTML = '<option value="" class="text-black">-- No Parent (Root) --</option>';
+            staff.forEach(s => {
+                select.innerHTML += `<option value="${s.name}" class="text-black">${s.name} (${s.role})</option>`;
+            });
+        }
+
+        // 4. Modal Logic
+        function openOrgModal() { 
+            const m = document.getElementById('orgModal');
+            if(m) m.classList.remove('hidden'); 
+        }
+        
+        function closeOrgModal() { 
+            const m = document.getElementById('orgModal');
+            if(m) m.classList.add('hidden'); 
+            const form = document.getElementById('orgForm');
+            if(form) form.reset();
+        }
+
+        // 5. Form Submit Logic
+        const orgForm = document.getElementById('orgForm');
+        if(orgForm) {
+            orgForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalText = btn.innerText;
+                btn.innerText = "Saving..."; btn.disabled = true;
+
+                const payload = {
+                    name: document.getElementById('staffName').value,
+                    role: document.getElementById('staffRole').value,
+                    parent: document.getElementById('staffParent').value
+                };
+
+                apiCall("saveOrgStaff", payload)
+                    .then(function(res) {
+                        btn.innerText = originalText; btn.disabled = false;
+                        if(res && res.success) {
+                            closeOrgModal();
+                            loadWorkspaceProfile();
+                        } else {
+                            alert("Error: " + ((res && res.message) || "Failed to save staff."));
+                        }
+                    })
+                    .catch(function(err) {
+                        btn.innerText = originalText; btn.disabled = false;
+                        console.error("saveOrgStaff error:", err);
+                        alert("Connection error.");
+                    });
+            });
+        }
+
+        // 6. Trigger Saat Aplikasi Dimuat
+
+
+        function addLinkInput() {
+          const wrapper = document.getElementById('dynamicLinksWrapper');
+
+          wrapper.insertAdjacentHTML("beforeend", `
+            <div class="flex gap-2 items-center">
+              <input type="url" name="taskLinks[]" placeholder="Drive / Doc Link (Optional)" class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs placeholder:text-white/30">
+              <button type="button" onclick="this.parentElement.remove()" class="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white rounded-lg w-8 h-8 flex items-center justify-center transition-all shrink-0">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+          `);
+        }
+
+        function resetLinkInputs() {
+          const wrapper = document.getElementById('dynamicLinksWrapper');
+          if (!wrapper) return;
+
+          wrapper.innerHTML = `
+            <div class="flex gap-2 items-center">
+              <input type="url" name="taskLinks[]" placeholder="Drive / Doc Link (Optional)" class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs placeholder:text-white/30">
+              <button type="button" onclick="addLinkInput()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white rounded-lg w-8 h-8 flex items-center justify-center transition-all shrink-0">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+              </button>
+            </div>
+          `;
+        }
+
+        function editTask(taskId) {
+          const task = globalTasks.find(t => String(t.id) === String(taskId));
+          if (!task) return alert("Task not found.");
+
+          const grid = document.getElementById('mainTasksGrid');
+          if (grid && grid.classList.contains('calendar-zoomed')) {
+            toggleCalendarZoom();
+          }
+
+          document.getElementById('taskTitle').value = task.title || "";
+          document.getElementById('taskAssignee').value = task.assignee || "";
+          document.getElementById('taskStatus').value = task.status || "Pending";
+
+          const radio = document.querySelector(`input[name="cat"][value="${task.category}"]`);
+          if (radio) radio.checked = true;
+
+          document.getElementById('taskDate').value = task.dateValue || "";
+
+          const wrapper = document.getElementById('dynamicLinksWrapper');
+          wrapper.innerHTML = "";
+
+          const links = task.link ? task.link.split(",") : [""];
+
+          links.forEach((link, index) => {
+            wrapper.insertAdjacentHTML("beforeend", `
+              <div class="flex gap-2 items-center">
+                <input type="url" name="taskLinks[]" value="${link.trim()}" placeholder="Drive / Doc Link (Optional)" class="w-full bg-black/20 border border-white/10 text-white rounded-lg py-2 px-3 outline-none focus:border-secondary transition-all text-xs placeholder:text-white/30">
+                ${index === 0 ? `
+                  <button type="button" onclick="addLinkInput()" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500 hover:text-white rounded-lg w-8 h-8 flex items-center justify-center transition-all shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                  </button>
+                ` : `
+                  <button type="button" onclick="this.parentElement.remove()" class="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white rounded-lg w-8 h-8 flex items-center justify-center transition-all shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                `}
+              </div>
+            `);
+          });
+
+          const btn = document.getElementById('btnSaveTask');
+          btn.dataset.editingId = task.id;
+          btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">update</span> Update Task';
+
+          document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const userData = JSON.parse(localStorage.getItem('currentUser'));
+
+          if (!userData) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          document.getElementById('welcomeName').textContent = `Welcome, ${userData.username}`;
+          document.getElementById('userRole').textContent = `Branch: ${userData.branch} | Role: ${userData.role}`;
+
+          fetchAllTasksAndRender();
+          loadBacklogTasks();
+          fetchExecutors();
+
+          fetchStrategyExecutors();
+          loadStrategies();
+          loadLeadershipKPIs();
+
+          loadManagerFeedbackBranches();
+          loadVaultData();
+          loadWorkspaceProfile();
+        });
+
+    </script>
 </body>
 </html>
