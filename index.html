@@ -5,9 +5,9 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Login - Kampung Inggris Pontianak</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="./api.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -27,6 +27,7 @@
             }
         }
     </script>
+
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -108,6 +109,7 @@
         }
     </style>
 </head>
+
 <body class="space-bg font-body-md text-white flex flex-col">
     <div class="stars"></div>
     <div class="nebula"></div>
@@ -127,6 +129,7 @@
                     <div class="mb-6 transform hover:scale-110 transition-transform duration-500 bg-gray-50 p-4 rounded-full shadow-inner">
                         <img alt="Logo" class="h-16 w-16 sm:h-20 sm:w-20 object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0uj96a0YECZbtoOgftkfQZBr4oszPorfpBJLzNy7MshgLyESscVJlyeVC0RkKut9zRRM3lQZoXNgXHr6c76TP5NcXc5lwNjn6GCzboJ9c4FS_KGMF36WH-hDEi0dJeyCWQfsnJVxggWDNlVKMkwryQ2q04p9f6qDy2zaXPv-fnPrEcwn37h9-I5cb_KeCpHLTuHRekDD-PCE19tGhQChwbd4fnpeEX_4nxkcauOMzm-AdFSwrvydd-0IBTxYAHloZnqJX5t2PDZQSA"/>
                     </div>
+
                     <h1 class="font-lexend text-2xl sm:text-3xl font-bold text-primary text-center">Welcome Back</h1>
                     <p class="font-lexend text-sm text-on-surface-variant text-center mt-2">Log in to your academic portal</p>
                 </div>
@@ -145,8 +148,8 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px] transition-all duration-300" data-icon="lock">lock</span>
                             <input class="input-field w-full pl-10 pr-10 py-3.5 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-secondary/20 focus:border-secondary font-lexend outline-none shadow-sm" id="password" name="password" placeholder="••••••••" type="password" required/>
-                            <button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors focus:outline-none" type="button" onclick="const p=document.getElementById('password'); p.type=p.type==='password'?'text':'password';">
-                                <span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+                            <button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors focus:outline-none" type="button" onclick="togglePasswordVisibility()">
+                                <span id="passwordToggleIcon" class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
                             </button>
                         </div>
                     </div>
@@ -188,84 +191,251 @@
     </footer>
 
     <script>
-        // REFINEMENT: Event Listener untuk me-load data Remember Me saat halaman terbuka
-        document.addEventListener("DOMContentLoaded", () => {
-            const savedUsername = localStorage.getItem('ki_remembered_username');
-            const savedPassword = localStorage.getItem('ki_remembered_password');
-            
-            if (savedUsername && savedPassword) {
-                document.getElementById('username').value = savedUsername;
-                document.getElementById('password').value = savedPassword;
-                document.getElementById('remember').checked = true;
+        /************************************************************
+         * GITHUB FRONTEND CONFIG
+         ************************************************************/
+
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUDgniFsHXkNo4hrS0iRCeRSGp1m7EjZ9eXmZXbGIEHbluJ4xoTegCK35-WucXgVOcng/exec";
+
+        const ROUTES = {
+            login: "index.html",
+            supervisor: "Dashboard.html",
+            manager: "DashboardManager.html"
+        };
+
+
+        /************************************************************
+         * API HELPER
+         ************************************************************/
+
+        function apiCall(action, payload = {}) {
+            return fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: action,
+                    payload: payload
+                })
+            })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error("HTTP error: " + response.status);
+                    }
+
+                    return response.json();
+                })
+                .then(function(response) {
+                    if (response && response.result && typeof response.result === "object") {
+                        return response.result;
+                    }
+
+                    return response;
+                });
+        }
+
+
+        /************************************************************
+         * NAVIGATION
+         ************************************************************/
+
+        function goToPage(pageName) {
+            if (pageName === "DashboardManager") {
+                window.location.href = ROUTES.manager;
+                return;
             }
-        });
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const usernameInput = document.getElementById('username').value;
-            const passwordInput = document.getElementById('password').value;
-            const rememberChecked = document.getElementById('remember').checked;
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
-            const mainCard = document.querySelector('.floating-wrapper'); 
-            
-            // UI Loading state
-            btnText.textContent = 'Authenticating...';
-            btnSpinner.classList.remove('hidden');
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
-            
-            apiCall("processLogin", {
-              username: usernameInput,
-              password: passwordInput
-            }).then(function(response) {
-              if (response && response.success) {
-                localStorage.setItem('currentUser', JSON.stringify(response.user));
-            
-                if (rememberChecked) {
-                  localStorage.setItem('ki_remembered_username', usernameInput);
-                  localStorage.setItem('ki_remembered_password', passwordInput);
-                } else {
-                  localStorage.removeItem('ki_remembered_username');
-                  localStorage.removeItem('ki_remembered_password');
-                }
-            
-                submitBtn.classList.replace('bg-secondary', 'bg-green-600');
-                btnSpinner.classList.add('hidden');
-                btnText.textContent = 'Access Granted!';
-            
-                setTimeout(() => {
-                  mainCard.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-                  mainCard.style.opacity = "0";
-                  mainCard.style.transform = "scale(0.95)";
-            
-                  const userRole = response.user.role.toString().toLowerCase();
-            
-                  if (userRole.includes('manager')) {
-                    window.location.href = "DashboardManager.html";
-                  } else {
-                    window.location.href = "Dashboard.html";
-                  }
-                }, 600);
-            
-              } else {
-                resetButton();
-                alert((response && response.message) || "Invalid username or password.");
-              }
-            }).catch(function(error) {
-              console.error("Login API error:", error);
-              resetButton();
-              alert("Connection error. Please try again.");
-            });
+            if (pageName === "Dashboard") {
+                window.location.href = ROUTES.supervisor;
+                return;
+            }
 
-            function resetButton() {
-                btnText.textContent = 'Login Securely';
-                btnSpinner.classList.add('hidden');
+            window.location.href = ROUTES.login;
+        }
+
+
+        /************************************************************
+         * UI HELPERS
+         ************************************************************/
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById("password");
+            const icon = document.getElementById("passwordToggleIcon");
+
+            if (!passwordInput) return;
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                if (icon) icon.textContent = "visibility_off";
+            } else {
+                passwordInput.type = "password";
+                if (icon) icon.textContent = "visibility";
+            }
+        }
+
+        function setButtonLoading(isLoading, text) {
+            const submitBtn = document.getElementById("submitBtn");
+            const btnText = document.getElementById("btnText");
+            const btnSpinner = document.getElementById("btnSpinner");
+
+            if (!submitBtn || !btnText || !btnSpinner) return;
+
+            if (isLoading) {
+                btnText.textContent = text || "Loading...";
+                btnSpinner.classList.remove("hidden");
+                submitBtn.disabled = true;
+                submitBtn.classList.add("opacity-80", "cursor-not-allowed");
+            } else {
+                btnText.textContent = "Login Securely";
+                btnSpinner.classList.add("hidden");
                 submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+                submitBtn.classList.remove("opacity-80", "cursor-not-allowed");
+            }
+        }
+
+        function setButtonSuccess() {
+            const submitBtn = document.getElementById("submitBtn");
+            const btnText = document.getElementById("btnText");
+            const btnSpinner = document.getElementById("btnSpinner");
+
+            if (!submitBtn || !btnText || !btnSpinner) return;
+
+            submitBtn.classList.remove("bg-secondary");
+            submitBtn.classList.add("bg-green-600");
+            btnSpinner.classList.add("hidden");
+            btnText.textContent = "Access Granted!";
+        }
+
+        function restoreButtonColor() {
+            const submitBtn = document.getElementById("submitBtn");
+
+            if (!submitBtn) return;
+
+            submitBtn.classList.add("bg-secondary");
+            submitBtn.classList.remove("bg-green-600");
+        }
+
+
+        /************************************************************
+         * SESSION HELPERS
+         ************************************************************/
+
+        function saveSession(user) {
+            localStorage.setItem("currentUser", JSON.stringify(user || {}));
+        }
+
+        function getSession() {
+            try {
+                return JSON.parse(localStorage.getItem("currentUser") || "null");
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function saveRememberedLogin(username, password) {
+            localStorage.setItem("ki_remembered_username", username);
+            localStorage.setItem("ki_remembered_password", password);
+        }
+
+        function clearRememberedLogin() {
+            localStorage.removeItem("ki_remembered_username");
+            localStorage.removeItem("ki_remembered_password");
+        }
+
+        function loadRememberedLogin() {
+            const savedUsername = localStorage.getItem("ki_remembered_username");
+            const savedPassword = localStorage.getItem("ki_remembered_password");
+
+            if (savedUsername && savedPassword) {
+                const usernameInput = document.getElementById("username");
+                const passwordInput = document.getElementById("password");
+                const rememberInput = document.getElementById("remember");
+
+                if (usernameInput) usernameInput.value = savedUsername;
+                if (passwordInput) passwordInput.value = savedPassword;
+                if (rememberInput) rememberInput.checked = true;
+            }
+        }
+
+
+        /************************************************************
+         * LOGIN LOGIC
+         ************************************************************/
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+
+            restoreButtonColor();
+
+            const usernameInput = document.getElementById("username").value.trim();
+            const passwordInput = document.getElementById("password").value;
+            const rememberChecked = document.getElementById("remember").checked;
+            const mainCard = document.querySelector(".floating-wrapper");
+
+            if (!usernameInput || !passwordInput) {
+                alert("Username and password are required.");
+                return;
+            }
+
+            setButtonLoading(true, "Authenticating...");
+
+            apiCall("processLogin", {
+                username: usernameInput,
+                password: passwordInput
+            })
+                .then(function(response) {
+                    if (response && response.success) {
+                        saveSession(response.user);
+
+                        if (rememberChecked) {
+                            saveRememberedLogin(usernameInput, passwordInput);
+                        } else {
+                            clearRememberedLogin();
+                        }
+
+                        setButtonSuccess();
+
+                        setTimeout(function() {
+                            if (mainCard) {
+                                mainCard.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                                mainCard.style.opacity = "0";
+                                mainCard.style.transform = "scale(0.95)";
+                            }
+
+                            const userRole = String(response.user && response.user.role ? response.user.role : "").toLowerCase();
+
+                            setTimeout(function() {
+                                if (userRole.includes("manager")) {
+                                    goToPage("DashboardManager");
+                                } else {
+                                    goToPage("Dashboard");
+                                }
+                            }, 250);
+                        }, 600);
+
+                        return;
+                    }
+
+                    setButtonLoading(false);
+                    alert((response && response.message) || "Invalid username or password.");
+                })
+                .catch(function(error) {
+                    console.error("Login API error:", error);
+                    setButtonLoading(false);
+                    alert("Connection error. Please check your internet connection or Apps Script deployment.");
+                });
+        }
+
+
+        /************************************************************
+         * INIT
+         ************************************************************/
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadRememberedLogin();
+
+            const loginForm = document.getElementById("loginForm");
+
+            if (loginForm) {
+                loginForm.addEventListener("submit", handleLoginSubmit);
             }
         });
     </script>
