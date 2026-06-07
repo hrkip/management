@@ -6,7 +6,6 @@
   <title>Kampung Inggris Pontianak - Supervisor Dashboard</title>
 
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script src="./api.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
@@ -306,6 +305,52 @@
       </section>
     </div>
 
+
+
+    <div id="tab-Tools" class="tab-content">
+      <section class="glass-panel rounded-3xl p-6 min-h-[680px] flex flex-col">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-5 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="font-lexend text-3xl font-bold text-white mb-2">SPV Tools</h2>
+            <p class="text-white/60 text-sm">Shortcut hub for monitoring webapps, audit sheets, follow-up trackers, and operational references.</p>
+          </div>
+
+          <div class="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div class="relative flex-grow lg:w-72">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-[18px]">search</span>
+              <input type="text" id="spvToolSearch" onkeyup="renderSpvTools()" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 pl-9 pr-4 outline-none focus:border-cyan-500 transition-all text-sm" placeholder="Search tools...">
+            </div>
+
+            <select id="spvToolStatusFilter" onchange="loadSpvTools()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-xl text-xs font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+              <option value="All" class="text-black">All Status</option>
+              <option value="Active" class="text-black">Active</option>
+              <option value="Inactive" class="text-black">Inactive</option>
+            </select>
+
+            <button onclick="openAddSpvToolModal()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 text-sm">
+              <span class="material-symbols-outlined text-[18px]">add_link</span>
+              Add Tool
+            </button>
+
+            <button onclick="loadSpvTools()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm">
+              <span class="material-symbols-outlined text-[18px]">refresh</span>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 flex-shrink-0" style="scrollbar-width: none;" id="spvToolCategoriesList">
+          <div class="text-xs text-white/50 italic">Loading categories...</div>
+        </div>
+
+        <div id="spvToolsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Loading tools...
+          </div>
+        </div>
+      </section>
+    </div>
+
     <div id="tab-Files" class="tab-content">
       <section class="glass-panel rounded-3xl p-6 min-h-[680px] flex flex-col">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-5 border-b border-white/10 pb-5">
@@ -339,7 +384,530 @@
       </section>
     </div>
 
+
+    <div id="tab-Monitoring" class="tab-content">
+      <section class="glass-panel rounded-3xl p-6 min-h-[680px]">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-6 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="font-lexend text-3xl font-bold text-white mb-2">Monitoring Checklist</h2>
+            <p class="text-white/60 text-sm">Select a branch, choose an active class, then submit objective classroom monitoring.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="openAddMonitoringBranchModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-lg shadow-emerald-600/20">
+              <span class="material-symbols-outlined text-[18px]">add_business</span>
+              Add Branch
+            </button>
+            <button type="button" onclick="loadMonitoringBranches()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm">
+              <span class="material-symbols-outlined text-[18px]">refresh</span>
+              Refresh
+            </button>
+            <span class="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold px-3 py-2 rounded-full uppercase tracking-wider">
+              Every 3 Days
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 min-h-0">
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-emerald-400">domain</span>
+                  Branches
+                </h3>
+                <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Choose branch first</p>
+              </div>
+              <span id="monitoringBranchCount" class="text-[10px] bg-white/10 px-2 py-1 rounded text-white/60 font-bold">0</span>
+            </div>
+
+            <div id="monitoringBranchGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+                Loading branches...
+              </div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-blue-400">groups</span>
+                  Active Classes
+                </h3>
+                <p id="selectedMonitoringBranchLabel" class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Select a branch</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="openAddMonitoringClassModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">add</span>
+                  Add Class
+                </button>
+                <span id="monitoringClassCount" class="text-[10px] bg-white/10 px-2 py-1 rounded text-white/60 font-bold">0</span>
+              </div>
+            </div>
+
+            <div id="monitoringClassGrid" class="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+                Click a branch to view active classes.
+              </div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-orange-400">fact_check</span>
+                  Objective Assessment
+                </h3>
+                <p id="selectedMonitoringClassLabel" class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Select a class</p>
+              </div>
+            </div>
+
+            <div id="monitoringFormEmptyState" class="flex-grow flex items-center justify-center text-center text-white/30 text-xs border border-dashed border-white/10 rounded-2xl p-6">
+              Select an active class to open the monitoring checklist.
+            </div>
+
+            <form id="monitoringForm" class="hidden space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="bg-black/20 border border-white/10 rounded-2xl p-4">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Selected Class</p>
+                <h4 id="monitoringSelectedClassName" class="text-white font-bold text-sm">-</h4>
+                <p id="monitoringSelectedClassMeta" class="text-white/50 text-[11px] mt-1">-</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Date</label>
+                  <input id="monitoringDate" type="date" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm [color-scheme:dark]">
+                </div>
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Observation Method</label>
+                  <select id="monitoringObservationMethod" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm">
+                    <option value="CCTV" class="text-black">CCTV</option>
+                    <option value="Direct Observation" class="text-black">Direct Observation</option>
+                    <option value="Both" class="text-black">Both</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Start Time</label>
+                    <select id="monitoringStartTimeStatus" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">End Time</label>
+                    <select id="monitoringEndTimeStatus" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Time Usage</label>
+                    <select id="monitoringTimeUsage" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Trainer Engagement</label>
+                    <select id="monitoringTrainerEngagement" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Student Engagement</label>
+                    <select id="monitoringStudentEngagement" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                  <div>
+                    <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Class Management</label>
+                    <select id="monitoringClassManagement" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Teaching Method</label>
+                  <select id="monitoringTeachingMethod" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm"></select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Positive Findings</label>
+                <textarea id="monitoringPositiveFindings" rows="3" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-emerald-500 text-sm resize-none" placeholder="What went well?"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Issues / Problems Found</label>
+                <textarea id="monitoringIssues" rows="3" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-emerald-500 text-sm resize-none" placeholder="Write objective issues if any..."></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Follow-up Recommendation</label>
+                <textarea id="monitoringFollowUp" rows="3" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-emerald-500 text-sm resize-none" placeholder="What should be followed up?"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Evidence Link Optional</label>
+                <input id="monitoringEvidenceLink" type="url" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-emerald-500 text-sm" placeholder="https://drive.google.com/...">
+              </div>
+
+              <button type="submit" id="btnSaveMonitoring" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">save</span>
+                Submit Monitoring
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-5 mt-6">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 border-b border-white/10 pb-4">
+            <div>
+              <h3 class="font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-400">history</span>
+                Recent Monitoring Reports
+              </h3>
+              <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Latest reports from this supervisor</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input id="monitoringFilterDate" type="date" onchange="loadMonitoringReports()" class="bg-black/20 border border-white/10 text-white rounded-lg py-1.5 px-2 outline-none focus:border-purple-500 text-xs [color-scheme:dark]">
+              <button type="button" onclick="clearMonitoringFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-lg text-white/60 font-bold">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div id="monitoringReportsList" class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div class="lg:col-span-3 text-center py-10 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+              No monitoring reports loaded yet.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+
+    <div id="tab-Audit" class="tab-content">
+      <section class="glass-panel rounded-3xl p-6 min-h-[680px]">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 mb-6 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="font-lexend text-3xl font-bold text-white mb-2">Audit Cabang</h2>
+            <p class="text-white/60 text-sm">Audit operasional cabang, analisa kekurangan, dan audit pengiriman video kelas.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="loadBranchAuditBranches(); loadBranchAuditReports();" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm">
+              <span class="material-symbols-outlined text-[18px]">refresh</span>
+              Refresh
+            </button>
+            <span class="bg-orange-500/20 border border-orange-500/30 text-orange-300 text-[10px] font-bold px-3 py-2 rounded-full uppercase tracking-wider">
+              Branch Control
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 min-h-0">
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-orange-400">domain_verification</span>
+                  Branches
+                </h3>
+                <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Choose branch to audit</p>
+              </div>
+              <span id="branchAuditBranchCount" class="text-[10px] bg-white/10 px-2 py-1 rounded text-white/60 font-bold">0</span>
+            </div>
+
+            <div id="branchAuditBranchGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+                Loading branches...
+              </div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-blue-400">assignment</span>
+                  Audit Form
+                </h3>
+                <p id="selectedBranchAuditLabel" class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Select a branch</p>
+              </div>
+            </div>
+
+            <div id="branchAuditFormEmptyState" class="flex-grow flex items-center justify-center text-center text-white/30 text-xs border border-dashed border-white/10 rounded-2xl p-6">
+              Select a branch to start operational audit.
+            </div>
+
+            <form id="branchAuditForm" class="hidden space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="bg-black/20 border border-white/10 rounded-2xl p-4">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Selected Branch</p>
+                <h4 id="branchAuditSelectedBranchName" class="text-white font-bold text-sm">-</h4>
+                <p id="branchAuditSelectedBranchMeta" class="text-white/50 text-[11px] mt-1">-</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Date</label>
+                  <input id="branchAuditDate" type="date" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm [color-scheme:dark]">
+                </div>
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Audit Type</label>
+                  <select id="branchAuditType" required onchange="handleBranchAuditTypeChange()" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm">
+                    <option value="Inventory Audit" class="text-black">Inventory Audit</option>
+                    <option value="Issue Management" class="text-black">Issue Management</option>
+                    <option value="Active Students Audit" class="text-black">Active Students Audit</option>
+                    <option value="Student Follow Up" class="text-black">Student Follow Up</option>
+                    <option value="Branch Gap Analysis" class="text-black">Branch Gap Analysis</option>
+                    <option value="Class Video Submission Audit" class="text-black">Class Video Submission Audit</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label id="branchAuditMainSubjectLabel" class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Main Subject</label>
+                <input id="branchAuditMainSubject" type="text" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm" placeholder="Item / issue / student / class / aspect">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Status</label>
+                  <select id="branchAuditStatus" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm"></select>
+                </div>
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Priority</label>
+                  <select id="branchAuditPriority" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm">
+                    <option value="Low" class="text-black">Low</option>
+                    <option value="Medium" class="text-black">Medium</option>
+                    <option value="High" class="text-black">High</option>
+                    <option value="Critical" class="text-black">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Assigned To</label>
+                  <input id="branchAuditAssignedTo" type="text" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm" placeholder="Team Leader / PIC">
+                </div>
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Reminder Status</label>
+                  <select id="branchAuditReminderStatus" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm">
+                    <option value="Not Needed" class="text-black">Not Needed</option>
+                    <option value="Need Reminder" class="text-black">Need Reminder</option>
+                    <option value="Reminder Sent" class="text-black">Reminder Sent</option>
+                    <option value="Escalated" class="text-black">Escalated</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Finding</label>
+                <textarea id="branchAuditFinding" rows="3" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-orange-500 text-sm resize-none" placeholder="Write the audit finding objectively..."></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Impact</label>
+                <textarea id="branchAuditImpact" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-orange-500 text-sm resize-none" placeholder="What is the operational impact?"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Root Cause</label>
+                <textarea id="branchAuditRootCause" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-orange-500 text-sm resize-none" placeholder="Why did this happen?"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Recommendation</label>
+                <textarea id="branchAuditRecommendation" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-orange-500 text-sm resize-none" placeholder="Recommended solution or system improvement..."></textarea>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Follow Up</label>
+                <textarea id="branchAuditFollowUp" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-orange-500 text-sm resize-none" placeholder="Next step / reminder / escalation..."></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Audit Frequency</label>
+                  <input id="branchAuditFrequency" type="text" readonly class="w-full bg-black/20 border border-white/10 text-white/70 rounded-xl py-2.5 px-3 outline-none text-sm cursor-not-allowed" value="As Needed">
+                </div>
+                <div>
+                  <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Evidence Link Optional</label>
+                  <input id="branchAuditEvidenceLink" type="url" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-orange-500 text-sm" placeholder="https://drive.google.com/...">
+                </div>
+              </div>
+
+              <button type="submit" id="btnSaveBranchAudit" class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-600/30 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">save</span>
+                Submit Audit
+              </button>
+            </form>
+          </div>
+
+          <div class="xl:col-span-4 glass-panel rounded-2xl p-5 h-[720px] max-h-[calc(100vh-230px)] min-h-[560px] flex flex-col min-w-0">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+              <div>
+                <h3 class="font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-purple-400">analytics</span>
+                  Audit Summary
+                </h3>
+                <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">This supervisor reports</p>
+              </div>
+            </div>
+
+            <div id="branchAuditSummaryCards" class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-black/20 border border-white/5 rounded-2xl p-3">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Total</p>
+                <p id="branchAuditSummaryTotal" class="text-white font-black text-2xl">0</p>
+              </div>
+              <div class="bg-black/20 border border-white/5 rounded-2xl p-3">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Need Follow Up</p>
+                <p id="branchAuditSummaryFollowUp" class="text-orange-300 font-black text-2xl">0</p>
+              </div>
+              <div class="bg-black/20 border border-white/5 rounded-2xl p-3">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Critical</p>
+                <p id="branchAuditSummaryCritical" class="text-red-300 font-black text-2xl">0</p>
+              </div>
+              <div class="bg-black/20 border border-white/5 rounded-2xl p-3">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Video Audit</p>
+                <p id="branchAuditSummaryVideo" class="text-blue-300 font-black text-2xl">0</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 mb-4">
+              <input id="branchAuditFilterDate" type="date" onchange="loadBranchAuditReports()" class="bg-black/20 border border-white/10 text-white rounded-lg py-1.5 px-2 outline-none focus:border-purple-500 text-xs [color-scheme:dark] flex-1">
+              <button type="button" onclick="clearBranchAuditFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-lg text-white/60 font-bold">
+                Clear
+              </button>
+            </div>
+
+            <div id="branchAuditReportsList" class="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 max-h-full" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+                No audit reports loaded yet.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+
   </main>
+
+
+  <div id="addSpvToolModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+    <div id="addSpvToolContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-cyan-400">add_link</span>
+          Add SPV Tool
+        </h3>
+
+        <button type="button" onclick="closeAddSpvToolModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="addSpvToolForm" class="space-y-4">
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Tool Name</label>
+          <input type="text" id="newSpvToolName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-cyan-500 text-sm" placeholder="e.g. Student Follow Up Tracker">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
+            <input type="text" id="newSpvToolCategory" list="spvToolCategoryOptions" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-cyan-500 text-sm" placeholder="e.g. Google Sheet Audit">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Status</label>
+            <select id="newSpvToolStatus" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-cyan-500 text-sm">
+              <option value="Active" class="text-black">Active</option>
+              <option value="Inactive" class="text-black">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Link URL</label>
+          <input type="url" id="newSpvToolLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-cyan-500 text-sm" placeholder="https://...">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Description</label>
+          <textarea id="newSpvToolDesc" rows="3" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-cyan-500 text-sm resize-none" placeholder="Brief details about this tool..."></textarea>
+        </div>
+
+        <datalist id="spvToolCategoryOptions"></datalist>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeAddSpvToolModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+          <button type="submit" id="btnSaveSpvTool" class="bg-cyan-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-cyan-500 shadow-lg shadow-cyan-600/20">Save Tool</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="editSpvToolModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+    <div id="editSpvToolContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-yellow-400">edit</span>
+          Edit SPV Tool
+        </h3>
+
+        <button type="button" onclick="closeEditSpvToolModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="editSpvToolForm" class="space-y-4">
+        <input type="hidden" id="editSpvToolId">
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Tool Name</label>
+          <input type="text" id="editSpvToolName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Category</label>
+            <input type="text" id="editSpvToolCategory" list="spvToolCategoryOptions" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Status</label>
+            <select id="editSpvToolStatus" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+              <option value="Active" class="text-black">Active</option>
+              <option value="Inactive" class="text-black">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Link URL</label>
+          <input type="url" id="editSpvToolLink" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Description</label>
+          <textarea id="editSpvToolDesc" rows="3" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-between gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="deleteSelectedSpvTool()" class="px-4 py-2 rounded-xl text-red-300 bg-red-500/10 border border-red-500/20 text-xs font-bold hover:bg-red-500 hover:text-white transition-all">
+            Delete
+          </button>
+
+          <div class="flex gap-3">
+            <button type="button" onclick="closeEditSpvToolModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+            <button type="submit" id="btnUpdateSpvTool" class="bg-yellow-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-yellow-500 shadow-lg shadow-yellow-600/20">Update Tool</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <div id="addFileModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
     <div class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="addFileContent">
@@ -389,6 +957,114 @@
     </div>
   </div>
 
+
+
+  <div id="addMonitoringBranchModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div id="addMonitoringBranchContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-emerald-400">add_business</span>
+          Add Monitoring Branch
+        </h3>
+        <button type="button" onclick="closeAddMonitoringBranchModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="addMonitoringBranchForm" class="space-y-4">
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Branch Name</label>
+          <input type="text" id="newMonitoringBranchName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-emerald-500 text-sm" placeholder="e.g. KIP Paris 1">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Supervisor / PIC</label>
+          <input type="text" id="newMonitoringBranchSpv" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-emerald-500 text-sm" placeholder="Optional">
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Status</label>
+          <select id="newMonitoringBranchStatus" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-emerald-500 text-sm">
+            <option value="Active" class="text-black">Active</option>
+            <option value="Inactive" class="text-black">Inactive</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeAddMonitoringBranchModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+          <button type="submit" id="btnSaveMonitoringBranch" class="bg-emerald-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-600/20">Save Branch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="addMonitoringClassModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div id="addMonitoringClassContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-2xl shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-blue-400">groups</span>
+          Add Active Class
+        </h3>
+        <button type="button" onclick="closeAddMonitoringClassModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="addMonitoringClassForm" class="space-y-4">
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Branch</label>
+          <input type="text" id="newMonitoringClassBranch" required readonly class="w-full bg-white/5 border border-white/10 text-white/70 rounded-xl py-2.5 px-4 outline-none text-sm cursor-not-allowed">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Class Name</label>
+            <input type="text" id="newMonitoringClassName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. Speaking Basic A">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Trainer Name</label>
+            <input type="text" id="newMonitoringTrainerName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="Trainer / tutor name">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Program</label>
+            <input type="text" id="newMonitoringProgram" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. Speaking">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Level</label>
+            <input type="text" id="newMonitoringLevel" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. Basic / Intermediate">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Session Time</label>
+            <input type="text" id="newMonitoringSessionTime" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. 08.00 - 10.00">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Schedule Days</label>
+            <input type="text" id="newMonitoringScheduleDays" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm" placeholder="e.g. Mon - Fri">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Status</label>
+          <select id="newMonitoringClassStatus" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-blue-500 text-sm">
+            <option value="Active" class="text-black">Active</option>
+            <option value="Inactive" class="text-black">Inactive</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeAddMonitoringClassModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+          <button type="submit" id="btnSaveMonitoringClass" class="bg-blue-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-blue-500 shadow-lg shadow-blue-600/20">Save Class</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
     <div class="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl mx-auto flex items-end px-3 py-2 gap-3 dock-container pointer-events-auto">
 
@@ -404,6 +1080,27 @@
           <span class="material-symbols-outlined text-[20px]">rate_review</span>
         </button>
         <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Feedback</span>
+      </div>
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Monitoring')">
+        <button id="btn-Monitoring" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+          <span class="material-symbols-outlined text-[20px]">fact_check</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Monitoring</span>
+      </div>
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Audit')">
+        <button id="btn-Audit" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+          <span class="material-symbols-outlined text-[20px]">domain_verification</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Audit</span>
+      </div>
+
+      <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Tools')">
+        <button id="btn-Tools" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+          <span class="material-symbols-outlined text-[20px]">apps</span>
+        </button>
+        <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Tools</span>
       </div>
 
       <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Files')">
@@ -433,6 +1130,66 @@
   </div>
 
   <script>
+    /************************************************************
+     * GITHUB FRONTEND CONFIG
+     ************************************************************/
+
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUDgniFsHXkNo4hrS0iRCeRSGp1m7EjZ9eXmZXbGIEHbluJ4xoTegCK35-WucXgVOcng/exec";
+
+    const ROUTES = {
+      login: "index.html",
+      supervisor: "Dashboard.html",
+      manager: "DashboardManager.html"
+    };
+
+
+    /************************************************************
+     * API HELPER - GITHUB FRONTEND TO GAS BACKEND
+     ************************************************************/
+
+    function apiCall(action, payload = {}) {
+      return fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: action,
+          payload: payload
+        })
+      })
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error("HTTP error: " + response.status);
+          }
+
+          return response.json();
+        })
+        .then(function(response) {
+          if (response && response.result && typeof response.result === "object") {
+            return response.result;
+          }
+
+          return response;
+        });
+    }
+
+
+    /************************************************************
+     * GITHUB PAGE NAVIGATION
+     ************************************************************/
+
+    function goToPage(pageName) {
+      if (pageName === "DashboardManager") {
+        window.location.href = ROUTES.manager;
+        return;
+      }
+
+      if (pageName === "Dashboard") {
+        window.location.href = ROUTES.supervisor;
+        return;
+      }
+
+      window.location.href = ROUTES.login;
+    }
+
     // ==========================================
     // GLOBAL STATE
     // ==========================================
@@ -477,7 +1234,7 @@
       const userData = JSON.parse(localStorage.getItem("currentUser"));
 
       if (!userData) {
-        window.location.href = "index.html";
+        goToPage("Index");
         return;
       }
 
@@ -495,16 +1252,64 @@
         feedbackForm.addEventListener("submit", handleFeedbackSubmit);
       }
 
+      const monitoringDate = document.getElementById("monitoringDate");
+      if (monitoringDate) {
+        monitoringDate.value = new Date().toISOString().split("T")[0];
+      }
+
+      const monitoringForm = document.getElementById("monitoringForm");
+      if (monitoringForm) {
+        monitoringForm.addEventListener("submit", handleMonitoringSubmit);
+      }
+
+      const addMonitoringBranchForm = document.getElementById("addMonitoringBranchForm");
+      if (addMonitoringBranchForm) {
+        addMonitoringBranchForm.addEventListener("submit", handleAddMonitoringBranchSubmit);
+      }
+
+      const addMonitoringClassForm = document.getElementById("addMonitoringClassForm");
+      if (addMonitoringClassForm) {
+        addMonitoringClassForm.addEventListener("submit", handleAddMonitoringClassSubmit);
+      }
+
+      const branchAuditDate = document.getElementById("branchAuditDate");
+      if (branchAuditDate) {
+        branchAuditDate.value = new Date().toISOString().split("T")[0];
+      }
+
+      const branchAuditForm = document.getElementById("branchAuditForm");
+      if (branchAuditForm) {
+        branchAuditForm.addEventListener("submit", handleBranchAuditSubmit);
+      }
+
+      const addSpvToolForm = document.getElementById("addSpvToolForm");
+      if (addSpvToolForm) {
+        addSpvToolForm.addEventListener("submit", handleAddSpvToolSubmit);
+      }
+
+      const editSpvToolForm = document.getElementById("editSpvToolForm");
+      if (editSpvToolForm) {
+        editSpvToolForm.addEventListener("submit", handleEditSpvToolSubmit);
+      }
+
+      setupMonitoringScoreDropdowns();
+      setupBranchAuditStatusDropdown();
       populateFeedbackBranchOptions();
       loadSupervisorCalendarTasks();
       loadFeedbackList();
+      loadMonitoringBranches();
+      loadMonitoringReports();
+      loadBranchAuditTypeOptions();
+      loadBranchAuditBranches();
+      loadBranchAuditReports();
+      loadSpvTools();
       loadVaultData();
     });
 
     // ==========================================
     // TABS
     // ==========================================
-    const tabs = ["Activities", "Feedback", "Files"];
+    const tabs = ["Activities", "Feedback", "Monitoring", "Audit", "Tools", "Files"];
 
     function switchTab(activeTabName) {
       tabs.forEach(tab => {
@@ -570,9 +1375,6 @@
           populateFeedbackAgendaOptions();
         });
     }
-
-
-
 
     function normalizeTask(task) {
       const rawDate = task.targetDate || task.date || task.deadline || task.dateValue || "";
@@ -795,8 +1597,7 @@
     }
 
     // ==========================================
-    // FEEDBACK UI ONLY
-    // Backend save can be added later.
+    // FEEDBACK
     // ==========================================
     function populateFeedbackAgendaOptions() {
       const select = document.getElementById("feedbackAgenda");
@@ -837,7 +1638,10 @@
 
       apiCall("saveFeedback", payload)
         .then(function(res) {
-          btn.innerHTML = "Submit Feedback";
+          btn.innerHTML = `
+            <span class="material-symbols-outlined text-[18px]">send</span>
+            Submit Feedback
+          `;
           btn.disabled = false;
 
           if (!res || !res.success) {
@@ -854,7 +1658,10 @@
           populateFeedbackAgendaOptions();
         })
         .catch(function(err) {
-          btn.innerHTML = "Submit Feedback";
+          btn.innerHTML = `
+            <span class="material-symbols-outlined text-[18px]">send</span>
+            Submit Feedback
+          `;
           btn.disabled = false;
           alert("Error: " + err);
         });
@@ -942,25 +1749,6 @@
       });
     }
 
-    // ==========================================
-    // LOGOUT
-    // ==========================================
-    function logout() {
-      document.getElementById("logoutModal").classList.remove("hidden");
-      document.getElementById("logoutModal").classList.add("flex");
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById("logoutModal");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-
-    function confirmLogout() {
-      localStorage.removeItem("currentUser");
-      window.location.href = "index.html";
-    }
-
     function populateFeedbackBranchOptions() {
       const select = document.getElementById("feedbackBranch");
       if (!select) return;
@@ -987,6 +1775,1509 @@
             <option value="General" class="text-black">General</option>
           `;
         });
+    }
+
+
+    // ==========================================
+    // MONITORING CHECKLIST
+    // ==========================================
+    let monitoringBranches = [];
+    let monitoringClasses = [];
+    let selectedMonitoringBranch = "";
+    let selectedMonitoringClass = null;
+
+    const monitoringScoreOptions = ["Good", "Needs Attention", "Problem Found"];
+
+    function setupMonitoringScoreDropdowns() {
+      document.querySelectorAll(".monitoring-score").forEach(select => {
+        select.innerHTML = monitoringScoreOptions.map(option => `
+          <option value="${option}" class="text-black">${option}</option>
+        `).join("");
+      });
+    }
+
+
+    function openModalById(modalId, contentId) {
+      const modal = document.getElementById(modalId);
+      const content = document.getElementById(contentId);
+      if (!modal || !content) return;
+
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeModalById(modalId, contentId) {
+      const modal = document.getElementById(modalId);
+      const content = document.getElementById(contentId);
+      if (!modal || !content) return;
+
+      modal.classList.add("opacity-0");
+      content.classList.add("scale-95");
+
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
+    }
+
+    function openAddMonitoringBranchModal() {
+      const form = document.getElementById("addMonitoringBranchForm");
+      if (form) form.reset();
+      openModalById("addMonitoringBranchModal", "addMonitoringBranchContent");
+    }
+
+    function closeAddMonitoringBranchModal() {
+      closeModalById("addMonitoringBranchModal", "addMonitoringBranchContent");
+    }
+
+    function handleAddMonitoringBranchSubmit(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById("btnSaveMonitoringBranch");
+      const originalText = btn ? btn.innerHTML : "Save Branch";
+
+      const payload = {
+        branchName: document.getElementById("newMonitoringBranchName").value.trim(),
+        supervisorName: document.getElementById("newMonitoringBranchSpv").value.trim(),
+        status: document.getElementById("newMonitoringBranchStatus").value || "Active"
+      };
+
+      if (!payload.branchName) {
+        alert("Branch name is required.");
+        return;
+      }
+
+      if (btn) {
+        btn.innerHTML = "Saving...";
+        btn.disabled = true;
+      }
+
+      apiCall("addMonitoringBranch", payload)
+        .then(function(res) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to save branch.");
+            return;
+          }
+
+          closeAddMonitoringBranchModal();
+          loadMonitoringBranches();
+        })
+        .catch(function(err) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+          alert("Error: " + err);
+        });
+    }
+
+    function openAddMonitoringClassModal() {
+      if (!selectedMonitoringBranch) {
+        alert("Please select a branch first.");
+        return;
+      }
+
+      const form = document.getElementById("addMonitoringClassForm");
+      if (form) form.reset();
+
+      const branchInput = document.getElementById("newMonitoringClassBranch");
+      if (branchInput) branchInput.value = selectedMonitoringBranch;
+
+      openModalById("addMonitoringClassModal", "addMonitoringClassContent");
+    }
+
+    function closeAddMonitoringClassModal() {
+      closeModalById("addMonitoringClassModal", "addMonitoringClassContent");
+    }
+
+    function handleAddMonitoringClassSubmit(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById("btnSaveMonitoringClass");
+      const originalText = btn ? btn.innerHTML : "Save Class";
+
+      const payload = {
+        branchName: document.getElementById("newMonitoringClassBranch").value.trim(),
+        className: document.getElementById("newMonitoringClassName").value.trim(),
+        program: document.getElementById("newMonitoringProgram").value.trim(),
+        level: document.getElementById("newMonitoringLevel").value.trim(),
+        trainerName: document.getElementById("newMonitoringTrainerName").value.trim(),
+        sessionTime: document.getElementById("newMonitoringSessionTime").value.trim(),
+        scheduleDays: document.getElementById("newMonitoringScheduleDays").value.trim(),
+        status: document.getElementById("newMonitoringClassStatus").value || "Active"
+      };
+
+      if (!payload.branchName || !payload.className) {
+        alert("Branch and class name are required.");
+        return;
+      }
+
+      if (btn) {
+        btn.innerHTML = "Saving...";
+        btn.disabled = true;
+      }
+
+      apiCall("addMonitoringClass", payload)
+        .then(function(res) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to save class.");
+            return;
+          }
+
+          closeAddMonitoringClassModal();
+          loadActiveClassesByBranch(selectedMonitoringBranch);
+          loadMonitoringBranches();
+        })
+        .catch(function(err) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+          alert("Error: " + err);
+        });
+    }
+
+    function loadMonitoringBranches() {
+      const grid = document.getElementById("monitoringBranchGrid");
+      const count = document.getElementById("monitoringBranchCount");
+
+      if (!grid) return;
+
+      grid.innerHTML = `
+        <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+          Loading branches...
+        </div>
+      `;
+
+      apiCall("getMonitoringBranches")
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getMonitoringBranches failed:", res);
+            monitoringBranches = [];
+            renderMonitoringBranches();
+            return;
+          }
+
+          monitoringBranches = res.data || [];
+          if (count) count.textContent = monitoringBranches.length;
+          renderMonitoringBranches();
+        })
+        .catch(function(err) {
+          console.error("getMonitoringBranches error:", err);
+          monitoringBranches = [];
+          renderMonitoringBranches();
+        });
+    }
+
+    function renderMonitoringBranches() {
+      const grid = document.getElementById("monitoringBranchGrid");
+      const count = document.getElementById("monitoringBranchCount");
+
+      if (!grid) return;
+      if (count) count.textContent = monitoringBranches.length;
+
+      if (!monitoringBranches.length) {
+        grid.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No branch found. Make sure the Branches sheet has data.
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = "";
+
+      monitoringBranches.forEach(branch => {
+        const isSelected = selectedMonitoringBranch === branch.name;
+        const latestLabel = branch.latestMonitoringDate ? branch.latestMonitoringDate : "No report yet";
+        const statusClass = branch.status === "Active"
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+          : "bg-white/10 text-white/50 border-white/10";
+
+        grid.insertAdjacentHTML("beforeend", `
+          <button type="button" onclick="selectMonitoringBranch(decodeURIComponent('${encodeURIComponent(branch.name)}'))" class="text-left rounded-2xl p-4 border transition-all ${isSelected ? 'bg-emerald-500/15 border-emerald-500/50 shadow-lg shadow-emerald-600/10' : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/10'}">
+            <div class="flex justify-between items-start gap-3 mb-3">
+              <div>
+                <h4 class="font-bold text-white text-sm leading-snug">${escapeHtml(branch.name)}</h4>
+                <p class="text-[10px] text-white/40 mt-1">SPV: ${escapeHtml(branch.spv || "-")}</p>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full border font-bold uppercase ${statusClass}">
+                ${escapeHtml(branch.status || "Active")}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-black/20 rounded-xl p-2 border border-white/5">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Active Classes</p>
+                <p class="text-white font-black text-lg">${Number(branch.activeClassCount || 0)}</p>
+              </div>
+              <div class="bg-black/20 rounded-xl p-2 border border-white/5">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Latest</p>
+                <p class="text-white/70 font-bold text-[11px]">${escapeHtml(latestLabel)}</p>
+              </div>
+            </div>
+          </button>
+        `);
+      });
+    }
+
+    function selectMonitoringBranch(branchName) {
+      selectedMonitoringBranch = branchName;
+      selectedMonitoringClass = null;
+
+      renderMonitoringBranches();
+      resetMonitoringForm();
+      loadActiveClassesByBranch(branchName);
+
+      const label = document.getElementById("selectedMonitoringBranchLabel");
+      if (label) label.textContent = branchName;
+    }
+
+    function loadActiveClassesByBranch(branchName) {
+      const grid = document.getElementById("monitoringClassGrid");
+      const count = document.getElementById("monitoringClassCount");
+
+      if (!grid) return;
+
+      if (count) count.textContent = "0";
+
+      grid.innerHTML = `
+        <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+          Loading active classes...
+        </div>
+      `;
+
+      apiCall("getActiveClassesByBranch", {
+        branchName: branchName
+      })
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getActiveClassesByBranch failed:", res);
+            monitoringClasses = [];
+            renderMonitoringClasses();
+            return;
+          }
+
+          monitoringClasses = res.data || [];
+          renderMonitoringClasses();
+        })
+        .catch(function(err) {
+          console.error("getActiveClassesByBranch error:", err);
+          monitoringClasses = [];
+          renderMonitoringClasses();
+        });
+    }
+
+    function renderMonitoringClasses() {
+      const grid = document.getElementById("monitoringClassGrid");
+      const count = document.getElementById("monitoringClassCount");
+
+      if (!grid) return;
+      if (count) count.textContent = monitoringClasses.length;
+
+      if (!selectedMonitoringBranch) {
+        grid.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Click a branch to view active classes.
+          </div>
+        `;
+        return;
+      }
+
+      if (!monitoringClasses.length) {
+        grid.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No active class found for this branch.
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = "";
+
+      monitoringClasses.forEach(item => {
+        const isSelected = selectedMonitoringClass && selectedMonitoringClass.classId === item.classId;
+        const dueClass = item.monitoringDueStatus === "Due" || item.monitoringDueStatus === "Not Monitored Yet"
+          ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
+          : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        const lastMonitored = item.lastMonitored || "Never";
+
+        grid.insertAdjacentHTML("beforeend", `
+          <button type="button" onclick="selectMonitoringClass(decodeURIComponent('${encodeURIComponent(item.classId)}'))" class="w-full text-left rounded-2xl p-4 border transition-all ${isSelected ? 'bg-blue-500/15 border-blue-500/50 shadow-lg shadow-blue-600/10' : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/10'}">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div>
+                <h4 class="font-bold text-white text-sm leading-snug">${escapeHtml(item.className || "Untitled Class")}</h4>
+                <p class="text-[10px] text-white/45 mt-1">${escapeHtml(item.program || "-")} • ${escapeHtml(item.level || "-")}</p>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full border font-bold uppercase ${dueClass}">
+                ${escapeHtml(item.monitoringDueStatus || "Updated")}
+              </span>
+            </div>
+
+            <div class="space-y-1 text-[10px] text-white/50">
+              <p><span class="text-white/35">Trainer:</span> ${escapeHtml(item.trainerName || "-")}</p>
+              <p><span class="text-white/35">Session:</span> ${escapeHtml(item.sessionTime || "-")}</p>
+              <p><span class="text-white/35">Schedule:</span> ${escapeHtml(item.scheduleDays || "-")}</p>
+              <p><span class="text-white/35">Last monitored:</span> ${escapeHtml(lastMonitored)}</p>
+            </div>
+          </button>
+        `);
+      });
+    }
+
+    function selectMonitoringClass(classId) {
+      selectedMonitoringClass = monitoringClasses.find(item => String(item.classId) === String(classId)) || null;
+
+      renderMonitoringClasses();
+      openMonitoringFormForSelectedClass();
+    }
+
+    function openMonitoringFormForSelectedClass() {
+      const form = document.getElementById("monitoringForm");
+      const empty = document.getElementById("monitoringFormEmptyState");
+      const classLabel = document.getElementById("selectedMonitoringClassLabel");
+      const className = document.getElementById("monitoringSelectedClassName");
+      const classMeta = document.getElementById("monitoringSelectedClassMeta");
+
+      if (!selectedMonitoringClass) {
+        resetMonitoringForm();
+        return;
+      }
+
+      if (form) form.classList.remove("hidden");
+      if (empty) empty.classList.add("hidden");
+
+      if (classLabel) classLabel.textContent = selectedMonitoringClass.className || "Selected class";
+      if (className) className.textContent = selectedMonitoringClass.className || "-";
+      if (classMeta) {
+        classMeta.textContent = `${selectedMonitoringClass.branchName || "-"} • ${selectedMonitoringClass.trainerName || "-"} • ${selectedMonitoringClass.sessionTime || "-"}`;
+      }
+
+      const dateInput = document.getElementById("monitoringDate");
+      if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split("T")[0];
+      }
+    }
+
+    function resetMonitoringForm() {
+      const form = document.getElementById("monitoringForm");
+      const empty = document.getElementById("monitoringFormEmptyState");
+      const classLabel = document.getElementById("selectedMonitoringClassLabel");
+
+      if (form) {
+        form.reset();
+        form.classList.add("hidden");
+      }
+
+      if (empty) empty.classList.remove("hidden");
+      if (classLabel) classLabel.textContent = "Select a class";
+
+      const dateInput = document.getElementById("monitoringDate");
+      if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+
+      setupMonitoringScoreDropdowns();
+    }
+
+    function handleMonitoringSubmit(e) {
+      e.preventDefault();
+
+      if (!selectedMonitoringClass) {
+        alert("Please select a class first.");
+        return;
+      }
+
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      const payload = {
+        date: document.getElementById("monitoringDate").value,
+        branchName: selectedMonitoringClass.branchName || selectedMonitoringBranch,
+        classId: selectedMonitoringClass.classId || "",
+        className: selectedMonitoringClass.className || "",
+        program: selectedMonitoringClass.program || "",
+        level: selectedMonitoringClass.level || "",
+        trainerName: selectedMonitoringClass.trainerName || "",
+        sessionTime: selectedMonitoringClass.sessionTime || "",
+        observationMethod: document.getElementById("monitoringObservationMethod").value,
+        startTimeStatus: document.getElementById("monitoringStartTimeStatus").value,
+        endTimeStatus: document.getElementById("monitoringEndTimeStatus").value,
+        timeUsage: document.getElementById("monitoringTimeUsage").value,
+        trainerEngagement: document.getElementById("monitoringTrainerEngagement").value,
+        studentEngagement: document.getElementById("monitoringStudentEngagement").value,
+        classManagement: document.getElementById("monitoringClassManagement").value,
+        teachingMethod: document.getElementById("monitoringTeachingMethod").value,
+        positiveFindings: document.getElementById("monitoringPositiveFindings").value,
+        issues: document.getElementById("monitoringIssues").value,
+        followUp: document.getElementById("monitoringFollowUp").value,
+        evidenceLink: document.getElementById("monitoringEvidenceLink").value,
+        createdBy: userData.username || "Unknown"
+      };
+
+      const btn = document.getElementById("btnSaveMonitoring");
+      const originalText = btn.innerHTML;
+
+      btn.innerHTML = "Saving...";
+      btn.disabled = true;
+
+      apiCall("saveClassMonitoringReport", payload)
+        .then(function(res) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to save monitoring report.");
+            return;
+          }
+
+          alert("Monitoring report saved.");
+
+          document.getElementById("monitoringForm").reset();
+          document.getElementById("monitoringDate").value = new Date().toISOString().split("T")[0];
+          setupMonitoringScoreDropdowns();
+
+          loadMonitoringReports();
+
+          if (selectedMonitoringBranch) {
+            loadActiveClassesByBranch(selectedMonitoringBranch);
+            loadMonitoringBranches();
+          }
+        })
+        .catch(function(err) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          alert("Error: " + err);
+        });
+    }
+
+    function loadMonitoringReports() {
+      const list = document.getElementById("monitoringReportsList");
+      const filterDate = document.getElementById("monitoringFilterDate") ? document.getElementById("monitoringFilterDate").value : "";
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      if (!list) return;
+
+      list.innerHTML = `
+        <div class="lg:col-span-3 text-center py-10 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+          Loading monitoring reports...
+        </div>
+      `;
+
+      apiCall("getClassMonitoringReports", {
+        date: filterDate,
+        createdBy: userData.username || "",
+        limit: 9
+      })
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getClassMonitoringReports failed:", res);
+            renderMonitoringReports([]);
+            return;
+          }
+
+          renderMonitoringReports(res.data || []);
+        })
+        .catch(function(err) {
+          console.error("getClassMonitoringReports error:", err);
+          renderMonitoringReports([]);
+        });
+    }
+
+    function renderMonitoringReports(items) {
+      const list = document.getElementById("monitoringReportsList");
+      if (!list) return;
+
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="lg:col-span-3 text-center py-10 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No monitoring reports found.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = "";
+
+      items.forEach(item => {
+        const hasIssue = [
+          item.startTimeStatus,
+          item.endTimeStatus,
+          item.timeUsage,
+          item.trainerEngagement,
+          item.studentEngagement,
+          item.classManagement,
+          item.teachingMethod
+        ].some(value => value === "Problem Found");
+
+        const cardTone = hasIssue
+          ? "border-orange-500/30 bg-orange-500/5"
+          : "border-white/10 bg-white/5";
+
+        const evidenceHtml = item.evidenceLink
+          ? `<a href="${escapeHtmlAttr(item.evidenceLink)}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1 mt-2">
+              <span class="material-symbols-outlined text-[12px]">link</span>
+              Evidence
+            </a>`
+          : "";
+
+        list.insertAdjacentHTML("beforeend", `
+          <div class="fade-in rounded-2xl p-4 border ${cardTone}">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div>
+                <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(item.className || "Untitled Class")}</h4>
+                <p class="text-[10px] text-white/45">${escapeHtml(item.branchName || "-")} • ${escapeHtml(item.date || "-")}</p>
+                <p class="text-[10px] text-white/35">Trainer: ${escapeHtml(item.trainerName || "-")}</p>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${hasIssue ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}">
+                ${hasIssue ? "Issue" : "Clear"}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1 text-[10px] text-white/55 mt-3">
+              <p>Start: <span class="text-white/80">${escapeHtml(item.startTimeStatus || "-")}</span></p>
+              <p>End: <span class="text-white/80">${escapeHtml(item.endTimeStatus || "-")}</span></p>
+              <p>Trainer: <span class="text-white/80">${escapeHtml(item.trainerEngagement || "-")}</span></p>
+              <p>Method: <span class="text-white/80">${escapeHtml(item.teachingMethod || "-")}</span></p>
+            </div>
+
+            ${item.issues ? `<p class="text-[11px] text-white/60 mt-3 bg-black/20 border border-white/5 rounded-xl p-2">${escapeHtml(item.issues)}</p>` : ""}
+            ${evidenceHtml}
+          </div>
+        `);
+      });
+    }
+
+    function clearMonitoringFilter() {
+      const input = document.getElementById("monitoringFilterDate");
+      if (input) input.value = "";
+      loadMonitoringReports();
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeHtmlAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+
+    // ==========================================
+    // BRANCH AUDIT
+    // ==========================================
+    let branchAuditBranches = [];
+    let branchAuditTypes = [];
+    let selectedBranchAuditBranch = "";
+
+    const defaultBranchAuditTypes = [
+      "Inventory Audit",
+      "Issue Management",
+      "Active Students Audit",
+      "Student Follow Up",
+      "Branch Gap Analysis",
+      "Class Video Submission Audit"
+    ];
+
+    const branchAuditTypeMeta = {
+      "Inventory Audit": {
+        subjectLabel: "Item / Perlengkapan",
+        subjectPlaceholder: "e.g. Kursi kelas, speaker, board marker",
+        frequency: "As Needed",
+        statuses: ["Good", "Needs Attention", "Missing", "Damaged"]
+      },
+      "Issue Management": {
+        subjectLabel: "Issue Title",
+        subjectPlaceholder: "e.g. AC kelas rusak / komplain students",
+        frequency: "As Needed",
+        statuses: ["Open", "On Progress", "Resolved", "Escalated"]
+      },
+      "Active Students Audit": {
+        subjectLabel: "Program / Class Group",
+        subjectPlaceholder: "e.g. Speaking Basic A / Grammar Batch 2",
+        frequency: "As Needed",
+        statuses: ["Matched", "Needs Verification", "Different Data", "Problem Found"]
+      },
+      "Student Follow Up": {
+        subjectLabel: "Student / Group",
+        subjectPlaceholder: "e.g. Nama student / kelompok follow up",
+        frequency: "As Needed",
+        statuses: ["Pending", "Followed Up", "Need Escalation", "Resolved"]
+      },
+      "Branch Gap Analysis": {
+        subjectLabel: "Analysis Aspect",
+        subjectPlaceholder: "Learning / Team Discipline / Facilities / Administration",
+        frequency: "As Needed",
+        statuses: ["Good", "Needs Attention", "Problem Found", "Critical"]
+      },
+      "Class Video Submission Audit": {
+        subjectLabel: "Class / Video Submission",
+        subjectPlaceholder: "e.g. Speaking Basic A - Video Week 1",
+        frequency: "Minimum 2x per week",
+        statuses: ["On Time", "Late", "Not Submitted", "Not Standard"]
+      }
+    };
+
+    function setupBranchAuditStatusDropdown() {
+      handleBranchAuditTypeChange();
+    }
+
+    function loadBranchAuditTypeOptions() {
+      apiCall("getBranchAuditTypeOptions")
+        .then(function(res) {
+          if (res && res.success && Array.isArray(res.data) && res.data.length) {
+            branchAuditTypes = res.data;
+          } else {
+            branchAuditTypes = defaultBranchAuditTypes;
+          }
+
+          renderBranchAuditTypeOptions();
+        })
+        .catch(function(err) {
+          console.error("getBranchAuditTypeOptions error:", err);
+          branchAuditTypes = defaultBranchAuditTypes;
+          renderBranchAuditTypeOptions();
+        });
+    }
+
+    function getBranchAuditTypeValue(type) {
+      if (typeof type === "string") return type;
+      return String((type && type.value) || "");
+    }
+
+    function getBranchAuditTypeLabel(type) {
+      if (typeof type === "string") return type;
+      return String((type && (type.label || type.value)) || "");
+    }
+
+    function renderBranchAuditTypeOptions() {
+      const select = document.getElementById("branchAuditType");
+      if (!select) return;
+
+      const currentValue = select.value || "Inventory Audit";
+      const list = branchAuditTypes.length ? branchAuditTypes : defaultBranchAuditTypes;
+
+      select.innerHTML = list.map(type => {
+        const value = getBranchAuditTypeValue(type);
+        const label = getBranchAuditTypeLabel(type);
+
+        return `
+          <option value="${escapeHtmlAttr(value)}" class="text-black">${escapeHtml(label)}</option>
+        `;
+      }).join("");
+
+      const values = list.map(getBranchAuditTypeValue);
+      if (values.includes(currentValue)) {
+        select.value = currentValue;
+      }
+
+      handleBranchAuditTypeChange();
+    }
+
+    function handleBranchAuditTypeChange() {
+      const typeSelect = document.getElementById("branchAuditType");
+      const statusSelect = document.getElementById("branchAuditStatus");
+      const subjectLabel = document.getElementById("branchAuditMainSubjectLabel");
+      const subjectInput = document.getElementById("branchAuditMainSubject");
+      const frequencyInput = document.getElementById("branchAuditFrequency");
+
+      if (!typeSelect || !statusSelect) return;
+
+      const selectedType = typeSelect.value || "Inventory Audit";
+      const meta = branchAuditTypeMeta[selectedType] || branchAuditTypeMeta["Inventory Audit"];
+      const currentStatus = statusSelect.value;
+
+      if (subjectLabel) subjectLabel.textContent = meta.subjectLabel;
+      if (subjectInput) subjectInput.placeholder = meta.subjectPlaceholder;
+      if (frequencyInput) frequencyInput.value = meta.frequency;
+
+      statusSelect.innerHTML = meta.statuses.map(status => `
+        <option value="${escapeHtmlAttr(status)}" class="text-black">${escapeHtml(status)}</option>
+      `).join("");
+
+      if (meta.statuses.includes(currentStatus)) {
+        statusSelect.value = currentStatus;
+      }
+    }
+
+    function loadBranchAuditBranches() {
+      const grid = document.getElementById("branchAuditBranchGrid");
+      const count = document.getElementById("branchAuditBranchCount");
+
+      if (!grid) return;
+
+      grid.innerHTML = `
+        <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+          Loading branches...
+        </div>
+      `;
+
+      apiCall("getBranchAuditBranches")
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getBranchAuditBranches failed:", res);
+            branchAuditBranches = [];
+            renderBranchAuditBranches();
+            return;
+          }
+
+          branchAuditBranches = res.data || [];
+          if (count) count.textContent = branchAuditBranches.length;
+          renderBranchAuditBranches();
+        })
+        .catch(function(err) {
+          console.error("getBranchAuditBranches error:", err);
+          branchAuditBranches = [];
+          renderBranchAuditBranches();
+        });
+    }
+
+    function renderBranchAuditBranches() {
+      const grid = document.getElementById("branchAuditBranchGrid");
+      const count = document.getElementById("branchAuditBranchCount");
+
+      if (!grid) return;
+      if (count) count.textContent = branchAuditBranches.length;
+
+      if (!branchAuditBranches.length) {
+        grid.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No branch found. Make sure the Branches sheet has data.
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = "";
+
+      branchAuditBranches.forEach(branch => {
+        const branchName = branch.name || branch.branchName || "";
+        const isSelected = selectedBranchAuditBranch === branchName;
+        const latestLabel = branch.latestAuditDate || branch.latestMonitoringDate || "No audit yet";
+        const countLabel = Number(branch.auditCount || branch.count || 0);
+        const statusClass = (branch.status || "Active") === "Active"
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+          : "bg-white/10 text-white/50 border-white/10";
+
+        grid.insertAdjacentHTML("beforeend", `
+          <button type="button" onclick="selectBranchAuditBranch(decodeURIComponent('${encodeURIComponent(branchName)}'))" class="text-left rounded-2xl p-4 border transition-all ${isSelected ? 'bg-orange-500/15 border-orange-500/50 shadow-lg shadow-orange-600/10' : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/10'}">
+            <div class="flex justify-between items-start gap-3 mb-3">
+              <div>
+                <h4 class="font-bold text-white text-sm leading-snug">${escapeHtml(branchName)}</h4>
+                <p class="text-[10px] text-white/40 mt-1">SPV: ${escapeHtml(branch.spv || branch.supervisorName || "-")}</p>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full border font-bold uppercase ${statusClass}">
+                ${escapeHtml(branch.status || "Active")}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-black/20 rounded-xl p-2 border border-white/5">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Audits</p>
+                <p class="text-white font-black text-lg">${countLabel}</p>
+              </div>
+              <div class="bg-black/20 rounded-xl p-2 border border-white/5">
+                <p class="text-[9px] text-white/35 uppercase font-bold">Latest</p>
+                <p class="text-white/70 font-bold text-[11px]">${escapeHtml(latestLabel)}</p>
+              </div>
+            </div>
+          </button>
+        `);
+      });
+    }
+
+    function selectBranchAuditBranch(branchName) {
+      selectedBranchAuditBranch = branchName;
+
+      renderBranchAuditBranches();
+      openBranchAuditFormForSelectedBranch();
+      loadBranchAuditReports();
+      loadBranchAuditSummary();
+
+      const label = document.getElementById("selectedBranchAuditLabel");
+      if (label) label.textContent = branchName;
+    }
+
+    function openBranchAuditFormForSelectedBranch() {
+      const form = document.getElementById("branchAuditForm");
+      const empty = document.getElementById("branchAuditFormEmptyState");
+      const branchNameEl = document.getElementById("branchAuditSelectedBranchName");
+      const branchMetaEl = document.getElementById("branchAuditSelectedBranchMeta");
+
+      if (!selectedBranchAuditBranch) {
+        resetBranchAuditForm();
+        return;
+      }
+
+      const branch = branchAuditBranches.find(item => (item.name || item.branchName) === selectedBranchAuditBranch) || {};
+
+      if (form) form.classList.remove("hidden");
+      if (empty) empty.classList.add("hidden");
+
+      if (branchNameEl) branchNameEl.textContent = selectedBranchAuditBranch;
+      if (branchMetaEl) {
+        branchMetaEl.textContent = `SPV: ${branch.spv || branch.supervisorName || "-"} • Status: ${branch.status || "Active"}`;
+      }
+
+      const dateInput = document.getElementById("branchAuditDate");
+      if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split("T")[0];
+      }
+
+      handleBranchAuditTypeChange();
+    }
+
+    function resetBranchAuditForm() {
+      const form = document.getElementById("branchAuditForm");
+      const empty = document.getElementById("branchAuditFormEmptyState");
+      const label = document.getElementById("selectedBranchAuditLabel");
+
+      if (form) {
+        form.reset();
+        form.classList.add("hidden");
+      }
+
+      if (empty) empty.classList.remove("hidden");
+      if (label) label.textContent = "Select a branch";
+
+      const dateInput = document.getElementById("branchAuditDate");
+      if (dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+
+      handleBranchAuditTypeChange();
+    }
+
+    function handleBranchAuditSubmit(e) {
+      e.preventDefault();
+
+      if (!selectedBranchAuditBranch) {
+        alert("Please select a branch first.");
+        return;
+      }
+
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      const payload = {
+        date: document.getElementById("branchAuditDate").value,
+        branchName: selectedBranchAuditBranch,
+        auditType: document.getElementById("branchAuditType").value,
+        mainSubject: document.getElementById("branchAuditMainSubject").value,
+        status: document.getElementById("branchAuditStatus").value,
+        priority: document.getElementById("branchAuditPriority").value,
+        finding: document.getElementById("branchAuditFinding").value,
+        impact: document.getElementById("branchAuditImpact").value,
+        rootCause: document.getElementById("branchAuditRootCause").value,
+        recommendation: document.getElementById("branchAuditRecommendation").value,
+        followUp: document.getElementById("branchAuditFollowUp").value,
+        assignedTo: document.getElementById("branchAuditAssignedTo").value,
+        evidenceLink: document.getElementById("branchAuditEvidenceLink").value,
+        auditFrequency: document.getElementById("branchAuditFrequency").value,
+        reminderStatus: document.getElementById("branchAuditReminderStatus").value,
+        createdBy: userData.username || "Unknown"
+      };
+
+      const btn = document.getElementById("btnSaveBranchAudit");
+      const originalText = btn.innerHTML;
+
+      btn.innerHTML = "Saving...";
+      btn.disabled = true;
+
+      apiCall("saveBranchAuditReport", payload)
+        .then(function(res) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to save branch audit.");
+            return;
+          }
+
+          alert("Branch audit saved.");
+
+          document.getElementById("branchAuditForm").reset();
+          document.getElementById("branchAuditDate").value = new Date().toISOString().split("T")[0];
+          handleBranchAuditTypeChange();
+          openBranchAuditFormForSelectedBranch();
+
+          loadBranchAuditBranches();
+          loadBranchAuditReports();
+          loadBranchAuditSummary();
+        })
+        .catch(function(err) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          alert("Error: " + err);
+        });
+    }
+
+    function loadBranchAuditReports() {
+      const list = document.getElementById("branchAuditReportsList");
+      const filterDate = document.getElementById("branchAuditFilterDate") ? document.getElementById("branchAuditFilterDate").value : "";
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      if (!list) return;
+
+      list.innerHTML = `
+        <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+          Loading audit reports...
+        </div>
+      `;
+
+      apiCall("getBranchAuditReports", {
+        branchName: selectedBranchAuditBranch || "",
+        date: filterDate,
+        createdBy: userData.username || "",
+        limit: 12
+      })
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getBranchAuditReports failed:", res);
+            renderBranchAuditReports([]);
+            return;
+          }
+
+          renderBranchAuditReports(res.data || []);
+          updateBranchAuditSummaryFromItems(res.data || []);
+        })
+        .catch(function(err) {
+          console.error("getBranchAuditReports error:", err);
+          renderBranchAuditReports([]);
+          updateBranchAuditSummaryFromItems([]);
+        });
+    }
+
+    function renderBranchAuditReports(items) {
+      const list = document.getElementById("branchAuditReportsList");
+      if (!list) return;
+
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No branch audit reports found.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = "";
+
+      items.forEach(item => {
+        const status = item.status || "-";
+        const isProblem = ["Problem Found", "Critical", "Damaged", "Missing", "Late", "Not Submitted", "Not Standard", "Need Escalation", "Escalated", "Different Data"].includes(status);
+        const isAttention = ["Needs Attention", "Needs Verification", "Open", "On Progress", "Need Reminder"].includes(status);
+
+        const tone = isProblem
+          ? "border-red-500/30 bg-red-500/5"
+          : isAttention
+            ? "border-orange-500/30 bg-orange-500/5"
+            : "border-white/10 bg-white/5";
+
+        const badgeTone = isProblem
+          ? "bg-red-500/20 text-red-300 border-red-500/30"
+          : isAttention
+            ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
+            : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+
+        const evidenceHtml = item.evidenceLink
+          ? `<a href="${escapeHtmlAttr(item.evidenceLink)}" target="_blank" class="text-[10px] text-blue-300 hover:text-white underline inline-flex items-center gap-1">
+              <span class="material-symbols-outlined text-[12px]">link</span>
+              Evidence
+            </a>`
+          : `<span class="text-[10px] text-white/30">No evidence</span>`;
+
+        list.insertAdjacentHTML("beforeend", `
+          <div class="fade-in rounded-2xl p-4 border ${tone}">
+            <div class="flex justify-between items-start gap-3 mb-2">
+              <div>
+                <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(item.mainSubject || "Audit Report")}</h4>
+                <p class="text-[10px] text-white/45">${escapeHtml(item.branchName || "-")} • ${escapeHtml(item.date || "-")}</p>
+                <p class="text-[10px] text-white/35">${escapeHtml(item.auditType || "-")} • By: ${escapeHtml(item.createdBy || "Unknown")}</p>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${badgeTone}">
+                ${escapeHtml(status)}
+              </span>
+            </div>
+
+            <p class="text-[11px] text-white/65 leading-relaxed bg-black/20 border border-white/5 rounded-xl p-2 mb-3">
+              ${escapeHtml(item.finding || "No finding details.")}
+            </p>
+
+            ${item.followUp ? `<p class="text-[10px] text-orange-200/80 bg-orange-500/10 border border-orange-500/20 rounded-xl p-2 mb-3">Follow up: ${escapeHtml(item.followUp)}</p>` : ""}
+
+            <div class="flex justify-between items-center gap-3 pt-2 border-t border-white/10">
+              <span class="text-[10px] text-white/40">${escapeHtml(item.priority || "Low")} priority</span>
+              ${evidenceHtml}
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    function loadBranchAuditSummary() {
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+      apiCall("getBranchAuditSummary", {
+        branchName: selectedBranchAuditBranch || "",
+        createdBy: userData.username || ""
+      })
+        .then(function(res) {
+          if (!res || !res.success || !res.data) return;
+          renderBranchAuditSummary(res.data);
+        })
+        .catch(function(err) {
+          console.error("getBranchAuditSummary error:", err);
+        });
+    }
+
+    function renderBranchAuditSummary(summary) {
+      const totalEl = document.getElementById("branchAuditSummaryTotal");
+      const followUpEl = document.getElementById("branchAuditSummaryFollowUp");
+      const criticalEl = document.getElementById("branchAuditSummaryCritical");
+      const videoEl = document.getElementById("branchAuditSummaryVideo");
+
+      if (totalEl) totalEl.textContent = Number(summary.total || 0);
+      if (followUpEl) followUpEl.textContent = Number(summary.needFollowUp || summary.needReminder || 0);
+      if (criticalEl) criticalEl.textContent = Number(summary.critical || summary.problemFound || 0);
+      if (videoEl) videoEl.textContent = Number(summary.videoAudit || summary.classVideoSubmissionAudit || 0);
+    }
+
+    function updateBranchAuditSummaryFromItems(items) {
+      const summary = {
+        total: items.length,
+        needFollowUp: 0,
+        critical: 0,
+        videoAudit: 0
+      };
+
+      items.forEach(item => {
+        const status = String(item.status || "");
+        const priority = String(item.priority || "");
+        const reminder = String(item.reminderStatus || "");
+
+        if (
+          reminder === "Need Reminder" ||
+          reminder === "Reminder Sent" ||
+          status === "Open" ||
+          status === "On Progress" ||
+          status === "Need Escalation" ||
+          status === "Late" ||
+          status === "Not Submitted"
+        ) {
+          summary.needFollowUp++;
+        }
+
+        if (
+          priority === "Critical" ||
+          status === "Critical" ||
+          status === "Problem Found" ||
+          status === "Damaged" ||
+          status === "Missing"
+        ) {
+          summary.critical++;
+        }
+
+        if (item.auditType === "Class Video Submission Audit") {
+          summary.videoAudit++;
+        }
+      });
+
+      renderBranchAuditSummary(summary);
+    }
+
+    function clearBranchAuditFilter() {
+      const input = document.getElementById("branchAuditFilterDate");
+      if (input) input.value = "";
+      loadBranchAuditReports();
+    }
+
+
+
+
+
+    // ==========================================
+    // SPV TOOLS CRUD
+    // ==========================================
+    let spvTools = [];
+    let spvToolCategories = [];
+    let activeSpvToolCategory = "All Tools";
+
+    function loadSpvTools() {
+      const grid = document.getElementById("spvToolsGrid");
+      const statusFilter = document.getElementById("spvToolStatusFilter");
+      const selectedStatus = statusFilter ? statusFilter.value : "All";
+
+      if (grid) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            Loading tools...
+          </div>
+        `;
+      }
+
+      apiCall("getSpvTools", {
+        status: selectedStatus
+      })
+        .then(function(res) {
+          if (!res || !res.success) {
+            console.error("getSpvTools failed:", res);
+            spvTools = [];
+            spvToolCategories = [];
+            renderSpvToolCategories();
+            renderSpvTools();
+            return;
+          }
+
+          spvTools = res.data || [];
+          spvToolCategories = res.categories || [];
+          renderSpvToolCategories();
+          renderSpvTools();
+          populateSpvToolCategoryDatalist();
+        })
+        .catch(function(err) {
+          console.error("getSpvTools error:", err);
+          spvTools = [];
+          spvToolCategories = [];
+          renderSpvToolCategories();
+          renderSpvTools();
+        });
+    }
+
+    function renderSpvToolCategories() {
+      const container = document.getElementById("spvToolCategoriesList");
+      if (!container) return;
+
+      let html = "";
+
+      const allActive = activeSpvToolCategory === "All Tools"
+        ? "bg-white text-black font-black"
+        : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+
+      html += `
+        <button onclick="setSpvToolCategory('All Tools')" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors ${allActive}">
+          All Tools
+        </button>
+      `;
+
+      spvToolCategories.forEach(category => {
+        const isActive = activeSpvToolCategory === category;
+        const style = isActive
+          ? "bg-cyan-600 text-white font-black shadow-lg shadow-cyan-600/30"
+          : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10";
+
+        html += `
+          <button onclick="setSpvToolCategory(decodeURIComponent('${encodeURIComponent(category)}'))" class="px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${style}">
+            ${escapeHtml(category)}
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function setSpvToolCategory(categoryName) {
+      activeSpvToolCategory = categoryName;
+      renderSpvToolCategories();
+      renderSpvTools();
+    }
+
+    function renderSpvTools() {
+      const container = document.getElementById("spvToolsGrid");
+      const searchInput = document.getElementById("spvToolSearch");
+      if (!container) return;
+
+      const searchQ = searchInput ? searchInput.value.toLowerCase() : "";
+
+      container.innerHTML = "";
+      let foundCount = 0;
+
+      spvTools.forEach(tool => {
+        const toolName = String(tool.toolName || "");
+        const category = String(tool.category || "Other");
+        const description = String(tool.description || "");
+        const linkUrl = String(tool.linkUrl || "");
+        const status = String(tool.status || "Active");
+
+        const matchCat = activeSpvToolCategory === "All Tools" || category === activeSpvToolCategory;
+        const matchSearch =
+          toolName.toLowerCase().includes(searchQ) ||
+          category.toLowerCase().includes(searchQ) ||
+          description.toLowerCase().includes(searchQ);
+
+        if (!matchCat || !matchSearch) return;
+
+        foundCount++;
+
+        const statusClass = status === "Active"
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+          : "bg-white/10 text-white/50 border-white/10";
+
+        const openButton = linkUrl
+          ? `<a href="${escapeHtmlAttr(linkUrl)}" target="_blank" class="inline-flex items-center gap-1 text-[10px] bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 px-2 py-1 rounded-lg font-bold transition-colors">
+              Open
+              <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+            </a>`
+          : `<span class="text-[10px] text-white/30">No link</span>`;
+
+        container.insertAdjacentHTML("beforeend", `
+          <div class="glass-panel p-4 rounded-2xl border border-white/5 hover:border-cyan-500/50 hover:bg-white/5 transition-all group flex flex-col justify-between min-h-[190px]">
+            <div>
+              <div class="flex justify-between items-start gap-2 mb-3">
+                <span class="bg-cyan-500/20 text-cyan-300 text-[8px] px-2 py-1 rounded font-black uppercase tracking-wider line-clamp-1 max-w-[70%]">
+                  ${escapeHtml(category)}
+                </span>
+
+                <span class="${statusClass} text-[8px] px-2 py-1 rounded-full border font-black uppercase">
+                  ${escapeHtml(status)}
+                </span>
+              </div>
+
+              <h4 class="font-bold text-white text-sm mb-1 leading-snug line-clamp-2 group-hover:text-cyan-300 transition-colors">
+                ${escapeHtml(toolName || "Untitled Tool")}
+              </h4>
+
+              <p class="text-[10px] text-white/50 line-clamp-4 leading-relaxed">
+                ${escapeHtml(description || "No description provided.")}
+              </p>
+            </div>
+
+            <div class="flex justify-between items-center gap-2 mt-4 pt-3 border-t border-white/10">
+              ${openButton}
+
+              <button type="button" onclick="openEditSpvToolModal(decodeURIComponent('${encodeURIComponent(tool.toolId || "")}'))" class="text-[10px] bg-white/10 hover:bg-yellow-500/20 text-white/60 hover:text-yellow-300 border border-white/10 hover:border-yellow-500/30 px-2 py-1 rounded-lg font-bold transition-colors">
+                Edit
+              </button>
+            </div>
+          </div>
+        `);
+      });
+
+      if (foundCount === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
+            No tools found.
+          </div>
+        `;
+      }
+    }
+
+    function populateSpvToolCategoryDatalist() {
+      const list = document.getElementById("spvToolCategoryOptions");
+      if (!list) return;
+
+      const defaults = [
+        "Monitoring Webapp",
+        "Google Sheet Audit",
+        "Student Follow Up",
+        "Video Submission",
+        "Inventory",
+        "Issue Tracker",
+        "SOP / Reference",
+        "Other"
+      ];
+
+      const merged = [...new Set([...defaults, ...spvToolCategories])].filter(Boolean).sort();
+
+      list.innerHTML = merged.map(category => `
+        <option value="${escapeHtmlAttr(category)}"></option>
+      `).join("");
+    }
+
+    function openAddSpvToolModal() {
+      const form = document.getElementById("addSpvToolForm");
+      if (form) form.reset();
+
+      const status = document.getElementById("newSpvToolStatus");
+      if (status) status.value = "Active";
+
+      populateSpvToolCategoryDatalist();
+      openModalById("addSpvToolModal", "addSpvToolContent");
+    }
+
+    function closeAddSpvToolModal() {
+      closeModalById("addSpvToolModal", "addSpvToolContent");
+    }
+
+    function handleAddSpvToolSubmit(e) {
+      e.preventDefault();
+
+      const userData = JSON.parse(localStorage.getItem("currentUser")) || {};
+      const btn = document.getElementById("btnSaveSpvTool");
+      const originalText = btn ? btn.innerHTML : "Save Tool";
+
+      const payload = {
+        toolName: document.getElementById("newSpvToolName").value.trim(),
+        category: document.getElementById("newSpvToolCategory").value.trim(),
+        description: document.getElementById("newSpvToolDesc").value.trim(),
+        linkUrl: document.getElementById("newSpvToolLink").value.trim(),
+        status: document.getElementById("newSpvToolStatus").value || "Active",
+        createdBy: userData.username || "Unknown"
+      };
+
+      if (!payload.toolName || !payload.category || !payload.linkUrl) {
+        alert("Tool name, category, and link URL are required.");
+        return;
+      }
+
+      if (btn) {
+        btn.innerHTML = "Saving...";
+        btn.disabled = true;
+      }
+
+      apiCall("addSpvTool", payload)
+        .then(function(res) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to save SPV tool.");
+            return;
+          }
+
+          closeAddSpvToolModal();
+          loadSpvTools();
+        })
+        .catch(function(err) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+          alert("Error: " + err);
+        });
+    }
+
+    function openEditSpvToolModal(toolId) {
+      const tool = spvTools.find(item => String(item.toolId) === String(toolId));
+      if (!tool) {
+        alert("Tool not found.");
+        return;
+      }
+
+      document.getElementById("editSpvToolId").value = tool.toolId || "";
+      document.getElementById("editSpvToolName").value = tool.toolName || "";
+      document.getElementById("editSpvToolCategory").value = tool.category || "";
+      document.getElementById("editSpvToolDesc").value = tool.description || "";
+      document.getElementById("editSpvToolLink").value = tool.linkUrl || "";
+      document.getElementById("editSpvToolStatus").value = tool.status || "Active";
+
+      populateSpvToolCategoryDatalist();
+      openModalById("editSpvToolModal", "editSpvToolContent");
+    }
+
+    function closeEditSpvToolModal() {
+      closeModalById("editSpvToolModal", "editSpvToolContent");
+    }
+
+    function handleEditSpvToolSubmit(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById("btnUpdateSpvTool");
+      const originalText = btn ? btn.innerHTML : "Update Tool";
+
+      const payload = {
+        toolId: document.getElementById("editSpvToolId").value,
+        toolName: document.getElementById("editSpvToolName").value.trim(),
+        category: document.getElementById("editSpvToolCategory").value.trim(),
+        description: document.getElementById("editSpvToolDesc").value.trim(),
+        linkUrl: document.getElementById("editSpvToolLink").value.trim(),
+        status: document.getElementById("editSpvToolStatus").value || "Active"
+      };
+
+      if (!payload.toolId || !payload.toolName || !payload.category || !payload.linkUrl) {
+        alert("Tool ID, tool name, category, and link URL are required.");
+        return;
+      }
+
+      if (btn) {
+        btn.innerHTML = "Updating...";
+        btn.disabled = true;
+      }
+
+      apiCall("updateSpvTool", payload)
+        .then(function(res) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to update SPV tool.");
+            return;
+          }
+
+          closeEditSpvToolModal();
+          loadSpvTools();
+        })
+        .catch(function(err) {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+          alert("Error: " + err);
+        });
+    }
+
+    function deleteSelectedSpvTool() {
+      const toolId = document.getElementById("editSpvToolId").value;
+
+      if (!toolId) {
+        alert("Tool ID not found.");
+        return;
+      }
+
+      if (!confirm("Delete this SPV tool?")) {
+        return;
+      }
+
+      apiCall("deleteSpvTool", {
+        toolId: toolId
+      })
+        .then(function(res) {
+          if (!res || !res.success) {
+            alert((res && res.message) || "Failed to delete SPV tool.");
+            return;
+          }
+
+          closeEditSpvToolModal();
+          loadSpvTools();
+        })
+        .catch(function(err) {
+          alert("Error: " + err);
+        });
+    }
+
+
+    // ==========================================
+    // LOGOUT
+    // ==========================================
+    function logout() {
+      document.getElementById("logoutModal").classList.remove("hidden");
+      document.getElementById("logoutModal").classList.add("flex");
+    }
+
+    function closeLogoutModal() {
+      const modal = document.getElementById("logoutModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function confirmLogout() {
+      localStorage.removeItem("currentUser");
+      goToPage("Index");
     }
 
     // ==========================================
