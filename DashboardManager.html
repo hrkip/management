@@ -5,7 +5,6 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Manager Workspace - Kampung Inggris Pontianak</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="./api.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script id="tailwind-config">
@@ -548,7 +547,224 @@
 
         
 
-        <div id="tab-Files" class="tab-content">
+
+        <div id="tab-SPVReport" class="tab-content">
+          <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+
+            <section class="mb-5 flex-shrink-0">
+              <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-5">
+                <div>
+                  <h2 class="font-lexend text-3xl font-bold text-white mb-1">SPV Report</h2>
+                  <p class="text-white/60 text-sm">Read-only classroom monitoring reports submitted by supervisors.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <select id="spvReportBranchFilter" onchange="applySpvReportFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Branches</option>
+                  </select>
+
+                  <select id="spvReportClassFilter" onchange="applySpvReportFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Classes</option>
+                  </select>
+
+                  <select id="spvReportStatusFilter" onchange="applySpvReportFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Status</option>
+                    <option value="Good" class="text-black">Good</option>
+                    <option value="Needs Attention" class="text-black">Needs Attention</option>
+                    <option value="Problem Found" class="text-black">Problem Found</option>
+                  </select>
+
+                  <input id="spvReportDateFilter" type="date" onchange="applySpvReportFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer hover:bg-white/10 transition-colors [color-scheme:dark]">
+
+                  <button onclick="clearSpvReportFilters()" class="bg-white/10 hover:bg-white/20 text-white/70 px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all">
+                    Clear
+                  </button>
+
+                  <button onclick="loadSpvMonitoringReports()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">refresh</span>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5 flex-shrink-0">
+              <div class="glass-panel rounded-2xl p-4">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Total Reports</p>
+                <h3 id="spvSummaryTotal" class="text-3xl font-black text-white">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-green-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Good</p>
+                <h3 id="spvSummaryGood" class="text-3xl font-black text-green-400">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-orange-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Needs Attention</p>
+                <h3 id="spvSummaryAttention" class="text-3xl font-black text-orange-400">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-red-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Problem Found</p>
+                <h3 id="spvSummaryProblem" class="text-3xl font-black text-red-400">0</h3>
+              </div>
+            </section>
+
+            <div class="glass-panel rounded-3xl p-5 flex flex-col flex-grow min-h-0 overflow-hidden">
+              <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3 flex-shrink-0">
+                <div>
+                  <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">fact_check</span>
+                    Supervisor Monitoring Reports
+                  </h3>
+                  <p class="text-[10px] text-white/40 mt-1">Click a report card to inspect the full checklist.</p>
+                </div>
+
+                <span id="spvReportVisibleCount" class="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded font-bold">
+                  0 Reports
+                </span>
+              </div>
+
+              <div id="spvReportList" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                  Loading SPV reports...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="spvReportDetailModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+          <div id="spvReportDetailContent" class="bg-[#05051a]/95 border border-white/20 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.6)] transform scale-95 transition-transform duration-300 flex flex-col">
+            <div class="p-6 border-b border-white/10 flex justify-between items-start gap-4 flex-shrink-0">
+              <div>
+                <span id="spvDetailStatus" class="inline-flex text-[10px] px-2 py-1 rounded font-black uppercase tracking-wider border mb-3">Status</span>
+                <h3 id="spvDetailTitle" class="text-2xl font-bold text-white font-lexend leading-tight">Class Monitoring Detail</h3>
+                <p id="spvDetailMeta" class="text-xs text-white/50 mt-1">Branch • Class • Date</p>
+              </div>
+
+              <button onclick="closeSpvReportDetailModal()" class="text-white/50 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full p-2">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div id="spvDetailBody" class="p-6 overflow-y-auto flex-grow" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center text-white/30 text-xs py-12">No report selected.</div>
+            </div>
+          </div>
+        </div>
+
+
+        
+        <div id="tab-SPVAudit" class="tab-content">
+          <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
+
+            <section class="mb-5 flex-shrink-0">
+              <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-5">
+                <div>
+                  <h2 class="font-lexend text-3xl font-bold text-white mb-1">SPV Audit</h2>
+                  <p class="text-white/60 text-sm">Read-only branch audit reports submitted by supervisors.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <select id="spvAuditBranchFilter" onchange="applySpvAuditFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Branches</option>
+                  </select>
+
+                  <select id="spvAuditTypeFilter" onchange="applySpvAuditFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Audit Types</option>
+                  </select>
+
+                  <select id="spvAuditStatusFilter" onchange="applySpvAuditFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Status</option>
+                  </select>
+
+                  <select id="spvAuditPriorityFilter" onchange="applySpvAuditFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer appearance-none hover:bg-white/10 transition-colors">
+                    <option value="All" class="text-black">All Priority</option>
+                  </select>
+
+                  <input id="spvAuditDateFilter" type="date" onchange="applySpvAuditFilters()" class="bg-white/5 border border-white/10 text-white/80 px-3 py-2.5 rounded-lg text-[11px] font-bold outline-none cursor-pointer hover:bg-white/10 transition-colors [color-scheme:dark]">
+
+                  <button onclick="clearSpvAuditFilters()" class="bg-white/10 hover:bg-white/20 text-white/70 px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all">
+                    Clear
+                  </button>
+
+                  <button onclick="loadSpvAuditReports()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">refresh</span>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5 flex-shrink-0">
+              <div class="glass-panel rounded-2xl p-4">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Total Audits</p>
+                <h3 id="spvAuditSummaryTotal" class="text-3xl font-black text-white">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-emerald-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Resolved / Good</p>
+                <h3 id="spvAuditSummaryGood" class="text-3xl font-black text-emerald-400">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-orange-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">Needs Follow Up</p>
+                <h3 id="spvAuditSummaryFollowUp" class="text-3xl font-black text-orange-400">0</h3>
+              </div>
+
+              <div class="glass-panel rounded-2xl p-4 border-red-500/20">
+                <p class="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1">High Priority</p>
+                <h3 id="spvAuditSummaryHigh" class="text-3xl font-black text-red-400">0</h3>
+              </div>
+            </section>
+
+            <div class="glass-panel rounded-3xl p-5 flex flex-col flex-grow min-h-0 overflow-hidden">
+              <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3 flex-shrink-0">
+                <div>
+                  <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-400">assignment_turned_in</span>
+                    Supervisor Branch Audit Reports
+                  </h3>
+                  <p class="text-[10px] text-white/40 mt-1">Click a report card to inspect full audit details.</p>
+                </div>
+
+                <span id="spvAuditVisibleCount" class="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded font-bold">
+                  0 Audits
+                </span>
+              </div>
+
+              <div id="spvAuditList" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pr-2 flex-grow min-h-0 content-start" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+                <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                  Loading SPV audit reports...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="spvAuditDetailModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+          <div id="spvAuditDetailContent" class="bg-[#05051a]/95 border border-white/20 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.6)] transform scale-95 transition-transform duration-300 flex flex-col">
+            <div class="p-6 border-b border-white/10 flex justify-between items-start gap-4 flex-shrink-0">
+              <div>
+                <span id="spvAuditDetailStatus" class="inline-flex text-[10px] px-2 py-1 rounded font-black uppercase tracking-wider border mb-3">Status</span>
+                <h3 id="spvAuditDetailTitle" class="text-2xl font-bold text-white font-lexend leading-tight">Branch Audit Detail</h3>
+                <p id="spvAuditDetailMeta" class="text-xs text-white/50 mt-1">Branch • Audit Type • Date</p>
+              </div>
+
+              <button onclick="closeSpvAuditDetailModal()" class="text-white/50 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full p-2">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div id="spvAuditDetailBody" class="p-6 overflow-y-auto flex-grow" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+              <div class="text-center text-white/30 text-xs py-12">No audit selected.</div>
+            </div>
+          </div>
+        </div>
+
+
+<div id="tab-Files" class="tab-content">
             <div class="flex flex-col h-[calc(100vh-140px)] min-h-[650px]">
                 
                 <section class="mb-4 flex-shrink-0">
@@ -926,6 +1142,21 @@
                 <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Reviews</span>
             </div>
             
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('SPVReport')">
+                <button id="btn-SPVReport" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="fact_check">fact_check</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">SPV Report</span>
+            </div>
+
+
+            <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('SPVAudit')">
+                <button id="btn-SPVAudit" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="assignment_turned_in">assignment_turned_in</span>
+                </button>
+                <span class="font-lexend font-bold text-[9px] uppercase tracking-wider text-white mt-1 opacity-0 group-hover:opacity-100 transition-opacity">SPV Audit</span>
+            </div>
+
             <div class="flex flex-col items-center dock-item group cursor-pointer" onclick="switchTab('Files')">
                 <button id="btn-Files" class="text-white/60 bg-transparent rounded-xl p-2.5 transition-all duration-300 pointer-events-none group-hover:text-white">
                     <span class="material-symbols-outlined text-[20px]" data-icon="folder_open">folder_open</span>
@@ -953,8 +1184,67 @@
     </nav>
 
     <script>
+        /************************************************************
+         * GITHUB FRONTEND CONFIG
+         ************************************************************/
 
-        const tabs = ['Dashboard','Tasks', 'KPI', 'Reviews', 'Files', 'Strategy', 'Settings'];
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUDgniFsHXkNo4hrS0iRCeRSGp1m7EjZ9eXmZXbGIEHbluJ4xoTegCK35-WucXgVOcng/exec";
+
+        const ROUTES = {
+            login: "index.html",
+            supervisor: "Dashboard.html",
+            manager: "DashboardManager.html"
+        };
+
+
+        /************************************************************
+         * API HELPER - GITHUB FRONTEND TO GAS BACKEND
+         ************************************************************/
+
+        function apiCall(action, payload = {}) {
+            return fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: action,
+                    payload: payload
+                })
+            })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error("HTTP error: " + response.status);
+                    }
+
+                    return response.json();
+                })
+                .then(function(response) {
+                    if (response && response.result && typeof response.result === "object") {
+                        return response.result;
+                    }
+
+                    return response;
+                });
+        }
+
+
+        /************************************************************
+         * PAGE NAVIGATION
+         ************************************************************/
+
+        function goToPage(pageName) {
+            if (pageName === "DashboardManager") {
+                window.location.href = ROUTES.manager;
+                return;
+            }
+
+            if (pageName === "Dashboard") {
+                window.location.href = ROUTES.supervisor;
+                return;
+            }
+
+            window.location.href = ROUTES.login;
+        }
+
+        const tabs = ['Dashboard','Tasks', 'KPI', 'Reviews', 'SPVReport', 'SPVAudit', 'Files', 'Strategy', 'Settings'];
 
         function switchTab(activeTabName) {
             tabs.forEach(tab => {
@@ -986,6 +1276,14 @@
                     }
                 }
             });
+
+            if (activeTabName === "SPVReport") {
+                loadSpvMonitoringReports();
+            }
+
+            if (activeTabName === "SPVAudit") {
+                loadSpvAuditReports();
+            }
         }
 
         function logout() {
@@ -1001,7 +1299,7 @@
 
         function confirmLogout() {
           localStorage.removeItem("currentUser");
-          window.location.href = "index.html";
+          goToPage("Index");
         }
 
         // ==========================================
@@ -1998,6 +2296,766 @@
           return String(value || "").replace(/'/g, "\\'");
         }
 
+
+        // ==========================================
+        // TAB: SPV REPORT (CLASS MONITORING REVIEW)
+        // ==========================================
+        let spvMonitoringReports = [];
+        let filteredSpvMonitoringReports = [];
+
+        function loadSpvMonitoringReports() {
+            const list = document.getElementById("spvReportList");
+            if (!list) return;
+
+            list.innerHTML = `
+              <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                Loading SPV monitoring reports...
+              </div>
+            `;
+
+            apiCall("getClassMonitoringReports", {
+                limit: 500
+            }).then(function(res) {
+                if (!res || !res.success) {
+                    console.error("getClassMonitoringReports failed:", res);
+                    list.innerHTML = `
+                      <div class="col-span-full text-center py-16 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-2xl">
+                        Failed to load SPV reports.
+                      </div>
+                    `;
+                    return;
+                }
+
+                spvMonitoringReports = (res.data || []).map(function(report) {
+                    return {
+                        ...report,
+                        overallStatus: getSpvOverallStatus(report)
+                    };
+                });
+
+                populateSpvReportFilters();
+                applySpvReportFilters();
+            }).catch(function(err) {
+                console.error("getClassMonitoringReports error:", err);
+                list.innerHTML = `
+                  <div class="col-span-full text-center py-16 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-2xl">
+                    Connection error while loading SPV reports.
+                  </div>
+                `;
+            });
+        }
+
+        function populateSpvReportFilters() {
+            const branchSelect = document.getElementById("spvReportBranchFilter");
+            const classSelect = document.getElementById("spvReportClassFilter");
+            if (!branchSelect || !classSelect) return;
+
+            const currentBranch = branchSelect.value || "All";
+            const currentClass = classSelect.value || "All";
+
+            const branches = [...new Set(spvMonitoringReports.map(r => r.branchName).filter(Boolean))].sort();
+            const classes = [...new Set(spvMonitoringReports.map(r => r.className).filter(Boolean))].sort();
+
+            branchSelect.innerHTML = `<option value="All" class="text-black">All Branches</option>`;
+            branches.forEach(branch => {
+                branchSelect.innerHTML += `<option value="${escapeHtml(branch)}" class="text-black">${escapeHtml(branch)}</option>`;
+            });
+
+            classSelect.innerHTML = `<option value="All" class="text-black">All Classes</option>`;
+            classes.forEach(className => {
+                classSelect.innerHTML += `<option value="${escapeHtml(className)}" class="text-black">${escapeHtml(className)}</option>`;
+            });
+
+            branchSelect.value = branches.includes(currentBranch) ? currentBranch : "All";
+            classSelect.value = classes.includes(currentClass) ? currentClass : "All";
+        }
+
+        function applySpvReportFilters() {
+            const branch = document.getElementById("spvReportBranchFilter")?.value || "All";
+            const className = document.getElementById("spvReportClassFilter")?.value || "All";
+            const status = document.getElementById("spvReportStatusFilter")?.value || "All";
+            const date = document.getElementById("spvReportDateFilter")?.value || "";
+
+            filteredSpvMonitoringReports = spvMonitoringReports.filter(function(report) {
+                if (branch !== "All" && report.branchName !== branch) return false;
+                if (className !== "All" && report.className !== className) return false;
+                if (status !== "All" && report.overallStatus !== status) return false;
+                if (date && report.date !== date) return false;
+                return true;
+            });
+
+            renderSpvReportSummary();
+            renderSpvReportList();
+        }
+
+        function clearSpvReportFilters() {
+            const branch = document.getElementById("spvReportBranchFilter");
+            const className = document.getElementById("spvReportClassFilter");
+            const status = document.getElementById("spvReportStatusFilter");
+            const date = document.getElementById("spvReportDateFilter");
+
+            if (branch) branch.value = "All";
+            if (className) className.value = "All";
+            if (status) status.value = "All";
+            if (date) date.value = "";
+
+            applySpvReportFilters();
+        }
+
+        function renderSpvReportSummary() {
+            const source = filteredSpvMonitoringReports || [];
+
+            const total = source.length;
+            const good = source.filter(r => r.overallStatus === "Good").length;
+            const attention = source.filter(r => r.overallStatus === "Needs Attention").length;
+            const problem = source.filter(r => r.overallStatus === "Problem Found").length;
+
+            const totalEl = document.getElementById("spvSummaryTotal");
+            const goodEl = document.getElementById("spvSummaryGood");
+            const attentionEl = document.getElementById("spvSummaryAttention");
+            const problemEl = document.getElementById("spvSummaryProblem");
+            const visibleEl = document.getElementById("spvReportVisibleCount");
+
+            if (totalEl) totalEl.textContent = total;
+            if (goodEl) goodEl.textContent = good;
+            if (attentionEl) attentionEl.textContent = attention;
+            if (problemEl) problemEl.textContent = problem;
+            if (visibleEl) visibleEl.textContent = `${total} Reports`;
+        }
+
+        function renderSpvReportList() {
+            const list = document.getElementById("spvReportList");
+            if (!list) return;
+
+            if (!filteredSpvMonitoringReports.length) {
+                list.innerHTML = `
+                  <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                    No SPV monitoring reports found for the selected filters.
+                  </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = "";
+
+            filteredSpvMonitoringReports.forEach(function(report) {
+                const style = getSpvStatusStyle(report.overallStatus);
+                const issuePreview = report.issues
+                    ? `<p class="text-[10px] text-white/50 line-clamp-2 mt-2">${escapeHtml(report.issues)}</p>`
+                    : `<p class="text-[10px] text-white/30 line-clamp-2 mt-2">No issue noted.</p>`;
+
+                list.insertAdjacentHTML("beforeend", `
+                  <div onclick="openSpvReportDetail('${escapeForOnclick(report.monitoringId)}')" class="bg-white/5 border border-white/10 p-4 rounded-2xl hover:border-white/25 hover:bg-white/[0.07] transition-all cursor-pointer group flex flex-col justify-between min-h-[210px]">
+                    <div>
+                      <div class="flex justify-between items-start gap-3 mb-3">
+                        <div>
+                          <h4 class="text-sm font-bold text-white group-hover:text-blue-300 transition-colors leading-snug">${escapeHtml(report.className || "Unnamed Class")}</h4>
+                          <p class="text-[10px] text-white/45 mt-1">${escapeHtml(report.branchName || "-")} • ${escapeHtml(report.date || "-")}</p>
+                        </div>
+
+                        <span class="${style.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase whitespace-nowrap">
+                          ${report.overallStatus}
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-2 text-[10px] mb-3">
+                        <div class="bg-black/20 border border-white/5 rounded-xl p-2">
+                          <p class="text-white/30 uppercase font-bold mb-0.5">Trainer</p>
+                          <p class="text-white/70 font-bold truncate">${escapeHtml(report.trainerName || "-")}</p>
+                        </div>
+
+                        <div class="bg-black/20 border border-white/5 rounded-xl p-2">
+                          <p class="text-white/30 uppercase font-bold mb-0.5">Observed By</p>
+                          <p class="text-white/70 font-bold truncate">${escapeHtml(report.createdBy || "-")}</p>
+                        </div>
+                      </div>
+
+                      ${issuePreview}
+                    </div>
+
+                    <div class="flex justify-between items-center gap-3 mt-4 pt-3 border-t border-white/10">
+                      <span class="text-[10px] text-white/35">${escapeHtml(report.observationMethod || "Observation")}</span>
+                      <span class="text-[10px] text-blue-300 group-hover:text-white font-bold inline-flex items-center gap-1">
+                        View Detail
+                        <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                      </span>
+                    </div>
+                  </div>
+                `);
+            });
+        }
+
+        function openSpvReportDetail(monitoringId) {
+            const report = spvMonitoringReports.find(r => String(r.monitoringId) === String(monitoringId));
+            if (!report) return;
+
+            const modal = document.getElementById("spvReportDetailModal");
+            const content = document.getElementById("spvReportDetailContent");
+            const statusEl = document.getElementById("spvDetailStatus");
+            const titleEl = document.getElementById("spvDetailTitle");
+            const metaEl = document.getElementById("spvDetailMeta");
+            const bodyEl = document.getElementById("spvDetailBody");
+
+            const style = getSpvStatusStyle(report.overallStatus);
+
+            statusEl.className = `inline-flex text-[10px] px-2 py-1 rounded font-black uppercase tracking-wider border mb-3 ${style.badge}`;
+            statusEl.textContent = report.overallStatus;
+
+            titleEl.textContent = report.className || "Class Monitoring Detail";
+            metaEl.textContent = `${report.branchName || "-"} • ${report.date || "-"} • ${report.createdBy || "Unknown"}`;
+
+            const evidenceHtml = report.evidenceLink
+                ? `<a href="${report.evidenceLink}" target="_blank" class="inline-flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">link</span>
+                    Open Evidence Link
+                  </a>`
+                : `<span class="text-xs text-white/30">No evidence link attached.</span>`;
+
+            bodyEl.innerHTML = `
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+                ${renderSpvInfoBox("Branch", report.branchName)}
+                ${renderSpvInfoBox("Program / Level", `${report.program || "-"} / ${report.level || "-"}`)}
+                ${renderSpvInfoBox("Trainer", report.trainerName)}
+                ${renderSpvInfoBox("Session", report.sessionTime)}
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-5">
+                ${renderSpvChecklistBox("Start Time", report.startTimeStatus)}
+                ${renderSpvChecklistBox("End Time", report.endTimeStatus)}
+                ${renderSpvChecklistBox("Time Usage", report.timeUsage)}
+                ${renderSpvChecklistBox("Trainer Engagement", report.trainerEngagement)}
+                ${renderSpvChecklistBox("Student Engagement", report.studentEngagement)}
+                ${renderSpvChecklistBox("Class Management", report.classManagement)}
+                ${renderSpvChecklistBox("Teaching Method", report.teachingMethod)}
+                ${renderSpvInfoBox("Observation Method", report.observationMethod)}
+                ${renderSpvInfoBox("Report ID", report.monitoringId)}
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+                ${renderSpvTextPanel("Positive Findings", report.positiveFindings || "No positive finding written.")}
+                ${renderSpvTextPanel("Issues / Problems", report.issues || "No issue written.")}
+                ${renderSpvTextPanel("Follow Up", report.followUp || "No follow-up written.")}
+              </div>
+
+              <div class="bg-black/20 border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <p class="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Submitted</p>
+                  <p class="text-sm text-white font-bold">${report.timestamp || "-"}</p>
+                  <p class="text-[10px] text-white/40 mt-1">Created by: ${report.createdBy || "Unknown"}</p>
+                </div>
+
+                <div>
+                  ${evidenceHtml}
+                </div>
+              </div>
+            `;
+
+            modal.classList.remove("hidden");
+            setTimeout(function() {
+                modal.classList.remove("opacity-0");
+                content.classList.remove("scale-95");
+            }, 10);
+        }
+
+        function closeSpvReportDetailModal() {
+            const modal = document.getElementById("spvReportDetailModal");
+            const content = document.getElementById("spvReportDetailContent");
+
+            modal.classList.add("opacity-0");
+            content.classList.add("scale-95");
+
+            setTimeout(function() {
+                modal.classList.add("hidden");
+            }, 250);
+        }
+
+        function getSpvOverallStatus(report) {
+            const values = [
+                report.startTimeStatus,
+                report.endTimeStatus,
+                report.timeUsage,
+                report.trainerEngagement,
+                report.studentEngagement,
+                report.classManagement,
+                report.teachingMethod
+            ].map(v => String(v || "").trim());
+
+            if (values.includes("Problem Found")) return "Problem Found";
+            if (values.includes("Needs Attention")) return "Needs Attention";
+            return "Good";
+        }
+
+        function getSpvStatusStyle(status) {
+            if (status === "Problem Found") {
+                return {
+                    badge: "bg-red-500/20 text-red-300 border-red-500/40",
+                    text: "text-red-300"
+                };
+            }
+
+            if (status === "Needs Attention") {
+                return {
+                    badge: "bg-orange-500/20 text-orange-300 border-orange-500/40",
+                    text: "text-orange-300"
+                };
+            }
+
+            return {
+                badge: "bg-green-500/20 text-green-300 border-green-500/40",
+                text: "text-green-300"
+            };
+        }
+
+        function renderSpvInfoBox(label, value) {
+            return `
+              <div class="bg-white/5 border border-white/10 rounded-2xl p-3">
+                <p class="text-[10px] text-white/35 uppercase font-bold tracking-wider mb-1">${escapeHtml(label)}</p>
+                <p class="text-sm text-white/80 font-bold leading-snug">${escapeHtml(value || "-")}</p>
+              </div>
+            `;
+        }
+
+        function renderSpvChecklistBox(label, value) {
+            const status = value || "-";
+            const style = getSpvStatusStyle(status);
+
+            return `
+              <div class="bg-white/5 border border-white/10 rounded-2xl p-3 flex justify-between items-center gap-3">
+                <p class="text-xs text-white/65 font-bold">${escapeHtml(label)}</p>
+                <span class="${style.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase whitespace-nowrap">
+                  ${escapeHtml(status)}
+                </span>
+              </div>
+            `;
+        }
+
+        function renderSpvTextPanel(label, value) {
+            return `
+              <div class="bg-black/20 border border-white/10 rounded-2xl p-4 min-h-[150px]">
+                <p class="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-2">${escapeHtml(label)}</p>
+                <p class="text-xs text-white/75 leading-relaxed whitespace-pre-wrap">${escapeHtml(value || "-")}</p>
+              </div>
+            `;
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+
+
+
+        // ==========================================
+        // TAB: SPV AUDIT (BRANCH AUDIT REVIEW)
+        // ==========================================
+        let spvAuditReports = [];
+        let filteredSpvAuditReports = [];
+
+        function loadSpvAuditReports() {
+            const list = document.getElementById("spvAuditList");
+            if (!list) return;
+
+            list.innerHTML = `
+              <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                Loading SPV audit reports...
+              </div>
+            `;
+
+            apiCall("getBranchAuditReports", {
+                limit: 500
+            }).then(function(res) {
+                if (!res || !res.success) {
+                    console.error("getBranchAuditReports failed:", res);
+                    list.innerHTML = `
+                      <div class="col-span-full text-center py-16 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-2xl">
+                        Failed to load SPV audit reports.
+                      </div>
+                    `;
+                    return;
+                }
+
+                spvAuditReports = (res.data || []).map(function(report) {
+                    return {
+                        ...report,
+                        normalizedStatus: normalizeSpvAuditStatus(report),
+                        normalizedPriority: normalizeSpvAuditPriority(report)
+                    };
+                });
+
+                populateSpvAuditFilters();
+                applySpvAuditFilters();
+            }).catch(function(err) {
+                console.error("getBranchAuditReports error:", err);
+                list.innerHTML = `
+                  <div class="col-span-full text-center py-16 text-red-400 text-xs italic border border-dashed border-red-500/20 rounded-2xl">
+                    Connection error while loading SPV audit reports.
+                  </div>
+                `;
+            });
+        }
+
+        function populateSpvAuditFilters() {
+            const branchSelect = document.getElementById("spvAuditBranchFilter");
+            const typeSelect = document.getElementById("spvAuditTypeFilter");
+            const statusSelect = document.getElementById("spvAuditStatusFilter");
+            const prioritySelect = document.getElementById("spvAuditPriorityFilter");
+
+            if (!branchSelect || !typeSelect || !statusSelect || !prioritySelect) return;
+
+            const currentBranch = branchSelect.value || "All";
+            const currentType = typeSelect.value || "All";
+            const currentStatus = statusSelect.value || "All";
+            const currentPriority = prioritySelect.value || "All";
+
+            const branches = [...new Set(spvAuditReports.map(r => r.branchName).filter(Boolean))].sort();
+            const types = [...new Set(spvAuditReports.map(r => r.auditType).filter(Boolean))].sort();
+            const statuses = [...new Set(spvAuditReports.map(r => r.status).filter(Boolean))].sort();
+            const priorities = [...new Set(spvAuditReports.map(r => r.priority).filter(Boolean))].sort();
+
+            branchSelect.innerHTML = `<option value="All" class="text-black">All Branches</option>`;
+            branches.forEach(branch => {
+                branchSelect.innerHTML += `<option value="${escapeHtml(branch)}" class="text-black">${escapeHtml(branch)}</option>`;
+            });
+
+            typeSelect.innerHTML = `<option value="All" class="text-black">All Audit Types</option>`;
+            types.forEach(type => {
+                typeSelect.innerHTML += `<option value="${escapeHtml(type)}" class="text-black">${escapeHtml(getAuditTypeDisplayLabel(type))}</option>`;
+            });
+
+            statusSelect.innerHTML = `<option value="All" class="text-black">All Status</option>`;
+            statuses.forEach(status => {
+                statusSelect.innerHTML += `<option value="${escapeHtml(status)}" class="text-black">${escapeHtml(status)}</option>`;
+            });
+
+            prioritySelect.innerHTML = `<option value="All" class="text-black">All Priority</option>`;
+            priorities.forEach(priority => {
+                prioritySelect.innerHTML += `<option value="${escapeHtml(priority)}" class="text-black">${escapeHtml(priority)}</option>`;
+            });
+
+            branchSelect.value = branches.includes(currentBranch) ? currentBranch : "All";
+            typeSelect.value = types.includes(currentType) ? currentType : "All";
+            statusSelect.value = statuses.includes(currentStatus) ? currentStatus : "All";
+            prioritySelect.value = priorities.includes(currentPriority) ? currentPriority : "All";
+        }
+
+        function applySpvAuditFilters() {
+            const branch = document.getElementById("spvAuditBranchFilter")?.value || "All";
+            const auditType = document.getElementById("spvAuditTypeFilter")?.value || "All";
+            const status = document.getElementById("spvAuditStatusFilter")?.value || "All";
+            const priority = document.getElementById("spvAuditPriorityFilter")?.value || "All";
+            const date = document.getElementById("spvAuditDateFilter")?.value || "";
+
+            filteredSpvAuditReports = spvAuditReports.filter(function(report) {
+                if (branch !== "All" && report.branchName !== branch) return false;
+                if (auditType !== "All" && report.auditType !== auditType) return false;
+                if (status !== "All" && report.status !== status) return false;
+                if (priority !== "All" && report.priority !== priority) return false;
+                if (date && report.date !== date) return false;
+                return true;
+            });
+
+            renderSpvAuditSummary();
+            renderSpvAuditList();
+        }
+
+        function clearSpvAuditFilters() {
+            const branch = document.getElementById("spvAuditBranchFilter");
+            const auditType = document.getElementById("spvAuditTypeFilter");
+            const status = document.getElementById("spvAuditStatusFilter");
+            const priority = document.getElementById("spvAuditPriorityFilter");
+            const date = document.getElementById("spvAuditDateFilter");
+
+            if (branch) branch.value = "All";
+            if (auditType) auditType.value = "All";
+            if (status) status.value = "All";
+            if (priority) priority.value = "All";
+            if (date) date.value = "";
+
+            applySpvAuditFilters();
+        }
+
+        function renderSpvAuditSummary() {
+            const source = filteredSpvAuditReports || [];
+
+            const total = source.length;
+            const good = source.filter(r => isAuditGoodStatus(r.status)).length;
+            const followUp = source.filter(r => isAuditFollowUpStatus(r.status, r.reminderStatus, r.followUp)).length;
+            const high = source.filter(r => isAuditHighPriority(r.priority)).length;
+
+            const totalEl = document.getElementById("spvAuditSummaryTotal");
+            const goodEl = document.getElementById("spvAuditSummaryGood");
+            const followUpEl = document.getElementById("spvAuditSummaryFollowUp");
+            const highEl = document.getElementById("spvAuditSummaryHigh");
+            const visibleEl = document.getElementById("spvAuditVisibleCount");
+
+            if (totalEl) totalEl.textContent = total;
+            if (goodEl) goodEl.textContent = good;
+            if (followUpEl) followUpEl.textContent = followUp;
+            if (highEl) highEl.textContent = high;
+            if (visibleEl) visibleEl.textContent = `${total} Audits`;
+        }
+
+        function renderSpvAuditList() {
+            const list = document.getElementById("spvAuditList");
+            if (!list) return;
+
+            if (!filteredSpvAuditReports.length) {
+                list.innerHTML = `
+                  <div class="col-span-full text-center py-16 text-white/30 text-xs italic border border-dashed border-white/10 rounded-2xl">
+                    No SPV audit reports found for the selected filters.
+                  </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = "";
+
+            filteredSpvAuditReports.forEach(function(report) {
+                const statusStyle = getSpvAuditStatusStyle(report.status);
+                const priorityStyle = getSpvAuditPriorityStyle(report.priority);
+
+                const findingPreview = report.finding
+                    ? `<p class="text-[10px] text-white/55 line-clamp-2 mt-2">${escapeHtml(report.finding)}</p>`
+                    : `<p class="text-[10px] text-white/30 line-clamp-2 mt-2">No finding written.</p>`;
+
+                list.insertAdjacentHTML("beforeend", `
+                  <div onclick="openSpvAuditDetail('${escapeForOnclick(report.auditId)}')" class="bg-white/5 border border-white/10 p-4 rounded-2xl hover:border-white/25 hover:bg-white/[0.07] transition-all cursor-pointer group flex flex-col justify-between min-h-[220px]">
+                    <div>
+                      <div class="flex justify-between items-start gap-3 mb-3">
+                        <div>
+                          <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">${escapeHtml(report.mainSubject || "Branch Audit")}</h4>
+                          <p class="text-[10px] text-white/45 mt-1">${escapeHtml(report.branchName || "-")} • ${escapeHtml(report.date || "-")}</p>
+                        </div>
+
+                        <span class="${statusStyle.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase whitespace-nowrap">
+                          ${escapeHtml(report.status || "-")}
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-2 text-[10px] mb-3">
+                        <div class="bg-black/20 border border-white/5 rounded-xl p-2">
+                          <p class="text-white/30 uppercase font-bold mb-0.5">Audit Type</p>
+                          <p class="text-white/70 font-bold truncate">${escapeHtml(getAuditTypeDisplayLabel(report.auditType || "-"))}</p>
+                        </div>
+
+                        <div class="bg-black/20 border border-white/5 rounded-xl p-2">
+                          <p class="text-white/30 uppercase font-bold mb-0.5">Created By</p>
+                          <p class="text-white/70 font-bold truncate">${escapeHtml(report.createdBy || "-")}</p>
+                        </div>
+                      </div>
+
+                      ${findingPreview}
+                    </div>
+
+                    <div class="flex justify-between items-center gap-3 mt-4 pt-3 border-t border-white/10">
+                      <span class="${priorityStyle.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase">
+                        ${escapeHtml(report.priority || "Normal")}
+                      </span>
+                      <span class="text-[10px] text-emerald-300 group-hover:text-white font-bold inline-flex items-center gap-1">
+                        View Detail
+                        <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                      </span>
+                    </div>
+                  </div>
+                `);
+            });
+        }
+
+        function openSpvAuditDetail(auditId) {
+            const report = spvAuditReports.find(r => String(r.auditId) === String(auditId));
+            if (!report) return;
+
+            const modal = document.getElementById("spvAuditDetailModal");
+            const content = document.getElementById("spvAuditDetailContent");
+            const statusEl = document.getElementById("spvAuditDetailStatus");
+            const titleEl = document.getElementById("spvAuditDetailTitle");
+            const metaEl = document.getElementById("spvAuditDetailMeta");
+            const bodyEl = document.getElementById("spvAuditDetailBody");
+
+            const statusStyle = getSpvAuditStatusStyle(report.status);
+            const priorityStyle = getSpvAuditPriorityStyle(report.priority);
+            const evidenceHtml = report.evidenceLink
+                ? `<a href="${escapeHtml(report.evidenceLink)}" target="_blank" class="inline-flex items-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">link</span>
+                    Open Evidence Link
+                  </a>`
+                : `<span class="text-xs text-white/30">No evidence link attached.</span>`;
+
+            statusEl.className = `inline-flex text-[10px] px-2 py-1 rounded font-black uppercase tracking-wider border mb-3 ${statusStyle.badge}`;
+            statusEl.textContent = report.status || "-";
+
+            titleEl.textContent = report.mainSubject || "Branch Audit Detail";
+            metaEl.textContent = `${report.branchName || "-"} • ${getAuditTypeDisplayLabel(report.auditType || "-")} • ${report.date || "-"}`;
+
+            bodyEl.innerHTML = `
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+                ${renderSpvInfoBox("Branch", report.branchName)}
+                ${renderSpvInfoBox("Audit Type", getAuditTypeDisplayLabel(report.auditType))}
+                ${renderSpvInfoBox("Audit ID", report.auditId)}
+                ${renderSpvInfoBox("Created By", report.createdBy)}
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+                ${renderSpvInfoBox("Date", report.date)}
+                ${renderSpvInfoBox("Assigned To", report.assignedTo)}
+                ${renderSpvInfoBox("Frequency", report.auditFrequency)}
+                ${renderSpvInfoBox("Reminder", report.reminderStatus)}
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center gap-3">
+                  <div>
+                    <p class="text-[10px] text-white/35 uppercase font-bold tracking-wider mb-1">Status</p>
+                    <p class="text-sm text-white/80 font-bold">${escapeHtml(report.status || "-")}</p>
+                  </div>
+                  <span class="${statusStyle.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase whitespace-nowrap">
+                    ${escapeHtml(report.status || "-")}
+                  </span>
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center gap-3">
+                  <div>
+                    <p class="text-[10px] text-white/35 uppercase font-bold tracking-wider mb-1">Priority</p>
+                    <p class="text-sm text-white/80 font-bold">${escapeHtml(report.priority || "-")}</p>
+                  </div>
+                  <span class="${priorityStyle.badge} text-[9px] px-2 py-1 rounded-full border font-black uppercase whitespace-nowrap">
+                    ${escapeHtml(report.priority || "-")}
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+                ${renderSpvTextPanel("Finding", report.finding || "No finding written.")}
+                ${renderSpvTextPanel("Impact", report.impact || "No impact written.")}
+                ${renderSpvTextPanel("Root Cause", report.rootCause || "No root cause written.")}
+                ${renderSpvTextPanel("Recommendation", report.recommendation || "No recommendation written.")}
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+                ${renderSpvTextPanel("Follow Up", report.followUp || "No follow-up written.")}
+                ${renderSpvTextPanel("Main Subject", report.mainSubject || "-")}
+              </div>
+
+              <div class="bg-black/20 border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <p class="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Submitted</p>
+                  <p class="text-sm text-white font-bold">${escapeHtml(report.timestamp || "-")}</p>
+                  <p class="text-[10px] text-white/40 mt-1">Created by: ${escapeHtml(report.createdBy || "Unknown")}</p>
+                </div>
+
+                <div>
+                  ${evidenceHtml}
+                </div>
+              </div>
+            `;
+
+            modal.classList.remove("hidden");
+            setTimeout(function() {
+                modal.classList.remove("opacity-0");
+                content.classList.remove("scale-95");
+            }, 10);
+        }
+
+        function closeSpvAuditDetailModal() {
+            const modal = document.getElementById("spvAuditDetailModal");
+            const content = document.getElementById("spvAuditDetailContent");
+
+            modal.classList.add("opacity-0");
+            content.classList.add("scale-95");
+
+            setTimeout(function() {
+                modal.classList.add("hidden");
+            }, 250);
+        }
+
+        function normalizeSpvAuditStatus(report) {
+            return String(report.status || "").trim() || "Unknown";
+        }
+
+        function normalizeSpvAuditPriority(report) {
+            return String(report.priority || "").trim() || "Normal";
+        }
+
+        function isAuditGoodStatus(status) {
+            const s = String(status || "").toLowerCase();
+            return s.includes("good") || s.includes("clear") || s.includes("resolved") || s.includes("done") || s.includes("completed") || s.includes("on time");
+        }
+
+        function isAuditFollowUpStatus(status, reminderStatus, followUp) {
+            const s = `${status || ""} ${reminderStatus || ""} ${followUp || ""}`.toLowerCase();
+            return s.includes("follow") || s.includes("attention") || s.includes("pending") || s.includes("open") || s.includes("late") || s.includes("not submitted") || s.includes("problem");
+        }
+
+        function isAuditHighPriority(priority) {
+            const p = String(priority || "").toLowerCase();
+            return p.includes("high") || p.includes("critical") || p.includes("urgent");
+        }
+
+        function getSpvAuditStatusStyle(status) {
+            const s = String(status || "").toLowerCase();
+
+            if (s.includes("problem") || s.includes("not submitted") || s.includes("missing") || s.includes("damaged") || s.includes("critical")) {
+                return {
+                    badge: "bg-red-500/20 text-red-300 border-red-500/40",
+                    text: "text-red-300"
+                };
+            }
+
+            if (s.includes("attention") || s.includes("open") || s.includes("pending") || s.includes("late") || s.includes("progress") || s.includes("follow")) {
+                return {
+                    badge: "bg-orange-500/20 text-orange-300 border-orange-500/40",
+                    text: "text-orange-300"
+                };
+            }
+
+            return {
+                badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+                text: "text-emerald-300"
+            };
+        }
+
+        function getSpvAuditPriorityStyle(priority) {
+            const p = String(priority || "").toLowerCase();
+
+            if (p.includes("critical") || p.includes("high") || p.includes("urgent")) {
+                return {
+                    badge: "bg-red-500/20 text-red-300 border-red-500/40",
+                    text: "text-red-300"
+                };
+            }
+
+            if (p.includes("medium")) {
+                return {
+                    badge: "bg-orange-500/20 text-orange-300 border-orange-500/40",
+                    text: "text-orange-300"
+                };
+            }
+
+            return {
+                badge: "bg-white/10 text-white/60 border-white/20",
+                text: "text-white/60"
+            };
+        }
+
+        function getAuditTypeDisplayLabel(type) {
+            const labels = {
+                "Inventory Audit": "Audit Inventory / Perlengkapan",
+                "Issue Management": "Manajemen Issue",
+                "Active Students Audit": "Audit Students Aktif",
+                "Student Follow Up": "Follow Up Students",
+                "Branch Gap Analysis": "Analisa Kekurangan Cabang",
+                "Class Video Submission Audit": "Audit Video Kelas"
+            };
+
+            return labels[type] || type || "-";
+        }
+
+
         // ==========================================
         // THE VAULT (FILES) LOGIC
         // ==========================================
@@ -2478,7 +3536,7 @@
           const userData = JSON.parse(localStorage.getItem('currentUser'));
 
           if (!userData) {
-            window.location.href = "index.html";
+            goToPage("Index");
             return;
           }
 
@@ -2494,6 +3552,7 @@
           loadLeadershipKPIs();
 
           loadManagerFeedbackBranches();
+          loadSpvMonitoringReports();
           loadVaultData();
           loadWorkspaceProfile();
         });
