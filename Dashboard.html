@@ -295,7 +295,7 @@
               </div>
             </div>
 
-            <div id="feedbackList" class="space-y-3 flex-grow overflow-y-auto pr-2 min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+            <div id="feedbackList" class="space-y-3 overflow-y-auto pr-2 max-h-[450px]" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
               <div class="text-center py-16 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
                 No feedback submitted yet.
               </div>
@@ -576,7 +576,7 @@
             </div>
           </div>
 
-          <div id="monitoringReportsList" class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div id="monitoringReportsList" class="grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-y-auto pr-2 max-h-[500px]" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
             <div class="lg:col-span-3 text-center py-10 text-white/30 text-xs border border-dashed border-white/10 rounded-2xl">
               No monitoring reports loaded yet.
             </div>
@@ -796,6 +796,8 @@
   </main>
 
 
+  <!-- MODALS -->
+
   <div id="addSpvToolModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
     <div id="addSpvToolContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-lg shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
       <div class="flex justify-between items-center mb-5">
@@ -998,6 +1000,7 @@
     </div>
   </div>
 
+  <!-- ADD CLASS MODAL -->
   <div id="addMonitoringClassModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
     <div id="addMonitoringClassContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-2xl shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
       <div class="flex justify-between items-center mb-5">
@@ -1064,6 +1067,179 @@
       </form>
     </div>
   </div>
+
+  <!-- EDIT CLASS MODAL -->
+  <div id="editMonitoringClassModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div id="editMonitoringClassContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-2xl shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-yellow-400">edit</span>
+          Edit Active Class
+        </h3>
+        <button type="button" onclick="closeEditMonitoringClassModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="editMonitoringClassForm" class="space-y-4">
+        <input type="hidden" id="editMonitoringClassId">
+        
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Branch</label>
+          <input type="text" id="editMonitoringClassBranch" required readonly class="w-full bg-white/5 border border-white/10 text-white/70 rounded-xl py-2.5 px-4 outline-none text-sm cursor-not-allowed">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Class Name</label>
+            <input type="text" id="editMonitoringClassName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Trainer Name</label>
+            <input type="text" id="editMonitoringTrainerName" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Program</label>
+            <input type="text" id="editMonitoringProgram" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Level</label>
+            <input type="text" id="editMonitoringLevel" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Session Time</label>
+            <input type="text" id="editMonitoringSessionTime" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Schedule Days</label>
+            <input type="text" id="editMonitoringScheduleDays" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-white/50 uppercase block mb-1">Status</label>
+          <select id="editMonitoringClassStatus" class="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-4 outline-none focus:border-yellow-500 text-sm">
+            <option value="Active" class="text-black">Active</option>
+            <option value="Inactive" class="text-black">Inactive</option>
+          </select>
+        </div>
+
+        <div class="flex justify-between gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="deleteMonitoringClass()" class="px-4 py-2 rounded-xl text-red-300 bg-red-500/10 border border-red-500/20 text-xs font-bold hover:bg-red-500 hover:text-white transition-all">Delete</button>
+          <div class="flex gap-3">
+            <button type="button" onclick="closeEditMonitoringClassModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+            <button type="submit" id="btnUpdateMonitoringClass" class="bg-yellow-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-yellow-500 shadow-lg shadow-yellow-600/20">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT REPORT MODAL -->
+  <div id="editMonitoringReportModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div id="editMonitoringReportContent" class="bg-[#05051a]/95 border border-white/20 p-6 rounded-3xl w-full max-w-2xl shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-white font-lexend flex items-center gap-2">
+          <span class="material-symbols-outlined text-yellow-400">edit</span>
+          Edit Monitoring Report
+        </h3>
+        <button type="button" onclick="closeEditMonitoringReportModal()" class="text-white/50 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="editMonitoringReportForm" class="space-y-4">
+        <input type="hidden" id="editReportId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Date</label>
+            <input id="editReportDate" type="date" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm [color-scheme:dark]">
+          </div>
+          <div>
+            <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Observation Method</label>
+            <select id="editReportMethod" required class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm">
+              <option value="CCTV" class="text-black">CCTV</option>
+              <option value="Direct Observation" class="text-black">Direct Observation</option>
+              <option value="Both" class="text-black">Both</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Start Time</label>
+              <select id="editReportStartTime" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">End Time</label>
+              <select id="editReportEndTime" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Time Usage</label>
+              <select id="editReportTimeUsage" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Trainer Engagement</label>
+              <select id="editReportTrainer" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Student Engagement</label>
+              <select id="editReportStudent" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+            <div>
+              <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Class Management</label>
+              <select id="editReportManagement" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Teaching Method</label>
+            <select id="editReportTeaching" required class="monitoring-score w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm"></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Positive Findings</label>
+          <textarea id="editReportPositive" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-yellow-500 text-sm resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Issues / Problems Found</label>
+          <textarea id="editReportIssues" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-yellow-500 text-sm resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Follow-up Recommendation</label>
+          <textarea id="editReportFollowUp" rows="2" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-3 px-4 outline-none focus:border-yellow-500 text-sm resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-white/50 uppercase font-bold tracking-wider block mb-1">Evidence Link Optional</label>
+          <input id="editReportEvidence" type="url" class="w-full bg-black/20 border border-white/10 text-white rounded-xl py-2.5 px-3 outline-none focus:border-yellow-500 text-sm">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeEditMonitoringReportModal()" class="px-4 py-2 rounded-xl text-white/60 text-xs font-bold hover:bg-white/5">Cancel</button>
+          <button type="submit" id="btnUpdateReport" class="bg-yellow-600 px-5 py-2 rounded-xl text-white text-xs font-bold hover:bg-yellow-500 shadow-lg shadow-yellow-600/20">Update Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 
   <nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
     <div class="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl mx-auto flex items-end px-3 py-2 gap-3 dock-container pointer-events-auto">
@@ -1134,7 +1310,7 @@
      * GITHUB FRONTEND CONFIG
      ************************************************************/
 
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUDgniFsHXkNo4hrS0iRCeRSGp1m7EjZ9eXmZXbGIEHbluJ4xoTegCK35-WucXgVOcng/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxmxe6OeQ1uVMxfjq54KnJU-X5lgu9xd8rM-5rZXP-w6hMWs4sbaqt0gUoAwRsadAdKfw/exec";
 
     const ROUTES = {
       login: "index.html",
@@ -1270,6 +1446,16 @@
       const addMonitoringClassForm = document.getElementById("addMonitoringClassForm");
       if (addMonitoringClassForm) {
         addMonitoringClassForm.addEventListener("submit", handleAddMonitoringClassSubmit);
+      }
+
+      const editMonitoringClassForm = document.getElementById("editMonitoringClassForm");
+      if (editMonitoringClassForm) {
+        editMonitoringClassForm.addEventListener("submit", handleEditMonitoringClassSubmit);
+      }
+
+      const editMonitoringReportForm = document.getElementById("editMonitoringReportForm");
+      if (editMonitoringReportForm) {
+        editMonitoringReportForm.addEventListener("submit", handleEditMonitoringReportSubmit);
       }
 
       const branchAuditDate = document.getElementById("branchAuditDate");
@@ -1796,7 +1982,6 @@
       });
     }
 
-
     function openModalById(modalId, contentId) {
       const modal = document.getElementById(modalId);
       const content = document.getElementById(contentId);
@@ -1947,6 +2132,82 @@
           }
           alert("Error: " + err);
         });
+    }
+
+    // CRUD: Edit Monitoring Class
+    function openEditMonitoringClassModal(classId) {
+      const classData = monitoringClasses.find(item => String(item.classId) === String(classId));
+      if (!classData) return;
+
+      document.getElementById("editMonitoringClassId").value = classData.classId || "";
+      document.getElementById("editMonitoringClassBranch").value = classData.branchName || "";
+      document.getElementById("editMonitoringClassName").value = classData.className || "";
+      document.getElementById("editMonitoringTrainerName").value = classData.trainerName || "";
+      document.getElementById("editMonitoringProgram").value = classData.program || "";
+      document.getElementById("editMonitoringLevel").value = classData.level || "";
+      document.getElementById("editMonitoringSessionTime").value = classData.sessionTime || "";
+      document.getElementById("editMonitoringScheduleDays").value = classData.scheduleDays || "";
+      document.getElementById("editMonitoringClassStatus").value = classData.status || "Active";
+
+      openModalById("editMonitoringClassModal", "editMonitoringClassContent");
+    }
+
+    function closeEditMonitoringClassModal() {
+      closeModalById("editMonitoringClassModal", "editMonitoringClassContent");
+    }
+
+    function handleEditMonitoringClassSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnUpdateMonitoringClass");
+      const originalText = btn ? btn.innerHTML : "Update";
+
+      const payload = {
+        classId: document.getElementById("editMonitoringClassId").value,
+        className: document.getElementById("editMonitoringClassName").value.trim(),
+        program: document.getElementById("editMonitoringProgram").value.trim(),
+        level: document.getElementById("editMonitoringLevel").value.trim(),
+        trainerName: document.getElementById("editMonitoringTrainerName").value.trim(),
+        sessionTime: document.getElementById("editMonitoringSessionTime").value.trim(),
+        scheduleDays: document.getElementById("editMonitoringScheduleDays").value.trim(),
+        status: document.getElementById("editMonitoringClassStatus").value || "Active"
+      };
+
+      if (!payload.classId || !payload.className) {
+        alert("Class ID and Class Name are required.");
+        return;
+      }
+
+      if (btn) { btn.innerHTML = "Updating..."; btn.disabled = true; }
+
+      apiCall("updateMonitoringClass", payload).then(res => {
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        if (!res || !res.success) { alert((res && res.message) || "Failed to update class."); return; }
+        closeEditMonitoringClassModal();
+        if (selectedMonitoringBranch) {
+          loadActiveClassesByBranch(selectedMonitoringBranch);
+          loadMonitoringBranches();
+        }
+      }).catch(err => {
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        alert("Error: " + err);
+      });
+    }
+
+    function deleteMonitoringClass() {
+      const classId = document.getElementById("editMonitoringClassId").value;
+      if (!classId) return;
+      if (!confirm("Are you sure you want to delete this class?")) return;
+
+      apiCall("deleteMonitoringClass", { classId: classId }).then(res => {
+        if (!res || !res.success) { alert((res && res.message) || "Failed to delete class."); return; }
+        closeEditMonitoringClassModal();
+        if (selectedMonitoringBranch) {
+          loadActiveClassesByBranch(selectedMonitoringBranch);
+          loadMonitoringBranches();
+        }
+      }).catch(err => {
+        alert("Error: " + err);
+      });
     }
 
     function loadMonitoringBranches() {
@@ -2121,9 +2382,12 @@
                 <h4 class="font-bold text-white text-sm leading-snug">${escapeHtml(item.className || "Untitled Class")}</h4>
                 <p class="text-[10px] text-white/45 mt-1">${escapeHtml(item.program || "-")} • ${escapeHtml(item.level || "-")}</p>
               </div>
-              <span class="text-[9px] px-2 py-1 rounded-full border font-bold uppercase ${dueClass}">
-                ${escapeHtml(item.monitoringDueStatus || "Updated")}
-              </span>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="event.stopPropagation(); openEditMonitoringClassModal('${item.classId}')" class="text-[10px] bg-white/10 hover:bg-yellow-500/20 text-white/60 hover:text-yellow-300 border border-white/10 px-2 py-1 rounded-lg font-bold transition-colors">Edit</button>
+                <span class="text-[9px] px-2 py-1 rounded-full border font-bold uppercase ${dueClass}">
+                  ${escapeHtml(item.monitoringDueStatus || "Updated")}
+                </span>
+              </div>
             </div>
 
             <div class="space-y-1 text-[10px] text-white/50">
@@ -2260,6 +2524,8 @@
         });
     }
 
+    let globalMonitoringReports = [];
+
     function loadMonitoringReports() {
       const list = document.getElementById("monitoringReportsList");
       const filterDate = document.getElementById("monitoringFilterDate") ? document.getElementById("monitoringFilterDate").value : "";
@@ -2281,14 +2547,16 @@
         .then(function(res) {
           if (!res || !res.success) {
             console.error("getClassMonitoringReports failed:", res);
+            globalMonitoringReports = [];
             renderMonitoringReports([]);
             return;
           }
-
-          renderMonitoringReports(res.data || []);
+          globalMonitoringReports = res.data || [];
+          renderMonitoringReports(globalMonitoringReports);
         })
         .catch(function(err) {
           console.error("getClassMonitoringReports error:", err);
+          globalMonitoringReports = [];
           renderMonitoringReports([]);
         });
     }
@@ -2331,27 +2599,33 @@
           : "";
 
         list.insertAdjacentHTML("beforeend", `
-          <div class="fade-in rounded-2xl p-4 border ${cardTone}">
-            <div class="flex justify-between items-start gap-3 mb-2">
-              <div>
-                <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(item.className || "Untitled Class")}</h4>
-                <p class="text-[10px] text-white/45">${escapeHtml(item.branchName || "-")} • ${escapeHtml(item.date || "-")}</p>
-                <p class="text-[10px] text-white/35">Trainer: ${escapeHtml(item.trainerName || "-")}</p>
+          <div class="fade-in rounded-2xl p-4 border flex flex-col justify-between ${cardTone}">
+            <div>
+              <div class="flex justify-between items-start gap-3 mb-2">
+                <div>
+                  <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(item.className || "Untitled Class")}</h4>
+                  <p class="text-[10px] text-white/45">${escapeHtml(item.branchName || "-")} • ${escapeHtml(item.date || "-")}</p>
+                  <p class="text-[10px] text-white/35">Trainer: ${escapeHtml(item.trainerName || "-")}</p>
+                </div>
+                <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${hasIssue ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}">
+                  ${hasIssue ? "Issue" : "Clear"}
+                </span>
               </div>
-              <span class="text-[9px] px-2 py-1 rounded-full font-bold uppercase border ${hasIssue ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}">
-                ${hasIssue ? "Issue" : "Clear"}
-              </span>
-            </div>
 
-            <div class="grid grid-cols-2 gap-1 text-[10px] text-white/55 mt-3">
-              <p>Start: <span class="text-white/80">${escapeHtml(item.startTimeStatus || "-")}</span></p>
-              <p>End: <span class="text-white/80">${escapeHtml(item.endTimeStatus || "-")}</span></p>
-              <p>Trainer: <span class="text-white/80">${escapeHtml(item.trainerEngagement || "-")}</span></p>
-              <p>Method: <span class="text-white/80">${escapeHtml(item.teachingMethod || "-")}</span></p>
-            </div>
+              <div class="grid grid-cols-2 gap-1 text-[10px] text-white/55 mt-3">
+                <p>Start: <span class="text-white/80">${escapeHtml(item.startTimeStatus || "-")}</span></p>
+                <p>End: <span class="text-white/80">${escapeHtml(item.endTimeStatus || "-")}</span></p>
+                <p>Trainer: <span class="text-white/80">${escapeHtml(item.trainerEngagement || "-")}</span></p>
+                <p>Method: <span class="text-white/80">${escapeHtml(item.teachingMethod || "-")}</span></p>
+              </div>
 
-            ${item.issues ? `<p class="text-[11px] text-white/60 mt-3 bg-black/20 border border-white/5 rounded-xl p-2">${escapeHtml(item.issues)}</p>` : ""}
-            ${evidenceHtml}
+              ${item.issues ? `<p class="text-[11px] text-white/60 mt-3 bg-black/20 border border-white/5 rounded-xl p-2">${escapeHtml(item.issues)}</p>` : ""}
+              ${evidenceHtml}
+            </div>
+            <div class="flex justify-end items-center gap-2 mt-3 pt-3 border-t border-white/10">
+              <button type="button" onclick="openEditMonitoringReportModal('${item.monitoringId}')" class="text-[10px] bg-white/10 hover:bg-yellow-500/20 text-white/60 hover:text-yellow-300 border border-white/10 px-2 py-1 rounded-lg font-bold transition-colors">Edit</button>
+              <button type="button" onclick="deleteMonitoringReport('${item.monitoringId}')" class="text-[10px] bg-white/10 hover:bg-red-500/20 text-white/60 hover:text-red-300 border border-white/10 px-2 py-1 rounded-lg font-bold transition-colors">Delete</button>
+            </div>
           </div>
         `);
       });
@@ -2361,6 +2635,85 @@
       const input = document.getElementById("monitoringFilterDate");
       if (input) input.value = "";
       loadMonitoringReports();
+    }
+
+    // CRUD: Edit & Delete Monitoring Reports
+    function openEditMonitoringReportModal(monitoringId) {
+      const report = globalMonitoringReports.find(r => String(r.monitoringId) === String(monitoringId));
+      if (!report) return;
+
+      document.getElementById("editReportId").value = report.monitoringId || "";
+      document.getElementById("editReportDate").value = report.date || "";
+      document.getElementById("editReportMethod").value = report.observationMethod || "Direct Observation";
+      document.getElementById("editReportStartTime").value = report.startTimeStatus || "Good";
+      document.getElementById("editReportEndTime").value = report.endTimeStatus || "Good";
+      document.getElementById("editReportTimeUsage").value = report.timeUsage || "Good";
+      document.getElementById("editReportTrainer").value = report.trainerEngagement || "Good";
+      document.getElementById("editReportStudent").value = report.studentEngagement || "Good";
+      document.getElementById("editReportManagement").value = report.classManagement || "Good";
+      document.getElementById("editReportTeaching").value = report.teachingMethod || "Good";
+      document.getElementById("editReportPositive").value = report.positiveFindings || "";
+      document.getElementById("editReportIssues").value = report.issues || "";
+      document.getElementById("editReportFollowUp").value = report.followUp || "";
+      document.getElementById("editReportEvidence").value = report.evidenceLink || "";
+
+      openModalById("editMonitoringReportModal", "editMonitoringReportContent");
+    }
+
+    function closeEditMonitoringReportModal() {
+      closeModalById("editMonitoringReportModal", "editMonitoringReportContent");
+    }
+
+    function handleEditMonitoringReportSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnUpdateReport");
+      const originalText = btn ? btn.innerHTML : "Update Report";
+
+      const payload = {
+        monitoringId: document.getElementById("editReportId").value,
+        date: document.getElementById("editReportDate").value,
+        observationMethod: document.getElementById("editReportMethod").value,
+        startTimeStatus: document.getElementById("editReportStartTime").value,
+        endTimeStatus: document.getElementById("editReportEndTime").value,
+        timeUsage: document.getElementById("editReportTimeUsage").value,
+        trainerEngagement: document.getElementById("editReportTrainer").value,
+        studentEngagement: document.getElementById("editReportStudent").value,
+        classManagement: document.getElementById("editReportManagement").value,
+        teachingMethod: document.getElementById("editReportTeaching").value,
+        positiveFindings: document.getElementById("editReportPositive").value,
+        issues: document.getElementById("editReportIssues").value,
+        followUp: document.getElementById("editReportFollowUp").value,
+        evidenceLink: document.getElementById("editReportEvidence").value
+      };
+
+      if (!payload.monitoringId) {
+        alert("Monitoring ID is missing.");
+        return;
+      }
+
+      if (btn) { btn.innerHTML = "Updating..."; btn.disabled = true; }
+
+      apiCall("updateClassMonitoringReport", payload).then(res => {
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        if (!res || !res.success) { alert((res && res.message) || "Failed to update report."); return; }
+        closeEditMonitoringReportModal();
+        loadMonitoringReports();
+      }).catch(err => {
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        alert("Error: " + err);
+      });
+    }
+
+    function deleteMonitoringReport(monitoringId) {
+      if (!monitoringId) return;
+      if (!confirm("Are you sure you want to delete this monitoring report?")) return;
+
+      apiCall("deleteClassMonitoringReport", { monitoringId: monitoringId }).then(res => {
+        if (!res || !res.success) { alert((res && res.message) || "Failed to delete report."); return; }
+        loadMonitoringReports();
+      }).catch(err => {
+        alert("Error: " + err);
+      });
     }
 
     function escapeHtml(value) {
@@ -2378,8 +2731,9 @@
 
 
     // ==========================================
-    // BRANCH AUDIT
+    // BRANCH AUDIT - OPERATIONAL AUDIT AND GAP ANALYSIS
     // ==========================================
+
     let branchAuditBranches = [];
     let branchAuditTypes = [];
     let selectedBranchAuditBranch = "";
@@ -2848,18 +3202,18 @@
       const criticalEl = document.getElementById("branchAuditSummaryCritical");
       const videoEl = document.getElementById("branchAuditSummaryVideo");
 
-      if (totalEl) totalEl.textContent = Number(summary.total || 0);
-      if (followUpEl) followUpEl.textContent = Number(summary.needFollowUp || summary.needReminder || 0);
-      if (criticalEl) criticalEl.textContent = Number(summary.critical || summary.problemFound || 0);
-      if (videoEl) videoEl.textContent = Number(summary.videoAudit || summary.classVideoSubmissionAudit || 0);
+      if (totalEl) totalEl.textContent = Number(summary.totalReports || summary.total || 0);
+      if (followUpEl) followUpEl.textContent = Number(summary.openIssues || summary.needFollowUp || 0);
+      if (criticalEl) criticalEl.textContent = Number(summary.criticalPriority || summary.critical || 0);
+      if (videoEl) videoEl.textContent = Number(summary.videoAuditIssues || summary.videoAudit || 0);
     }
 
     function updateBranchAuditSummaryFromItems(items) {
       const summary = {
-        total: items.length,
-        needFollowUp: 0,
-        critical: 0,
-        videoAudit: 0
+        totalReports: items.length,
+        openIssues: 0,
+        criticalPriority: 0,
+        videoAuditIssues: 0
       };
 
       items.forEach(item => {
@@ -2874,9 +3228,11 @@
           status === "On Progress" ||
           status === "Need Escalation" ||
           status === "Late" ||
-          status === "Not Submitted"
+          status === "Not Submitted" ||
+          status === "Needs Attention" ||
+          status === "Problem Found"
         ) {
-          summary.needFollowUp++;
+          summary.openIssues++;
         }
 
         if (
@@ -2886,11 +3242,11 @@
           status === "Damaged" ||
           status === "Missing"
         ) {
-          summary.critical++;
+          summary.criticalPriority++;
         }
 
-        if (item.auditType === "Class Video Submission Audit") {
-          summary.videoAudit++;
+        if (item.auditType === "Class Video Submission Audit" && (status === "Late" || status === "Not Submitted" || status === "Not Standard")) {
+          summary.videoAuditIssues++;
         }
       });
 
@@ -2902,8 +3258,6 @@
       if (input) input.value = "";
       loadBranchAuditReports();
     }
-
-
 
 
 
@@ -3259,6 +3613,7 @@
           alert("Error: " + err);
         });
     }
+
 
 
     // ==========================================
