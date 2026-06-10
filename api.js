@@ -1,4 +1,4 @@
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyUDgniFsHXkNo4hrS0iRCeRSGp1m7EjZ9eXmZXbGIEHbluJ4xoTegCK35-WucXgVOcng/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxmxe6OeQ1uVMxfjq54KnJU-X5lgu9xd8rM-5rZXP-w6hMWs4sbaqt0gUoAwRsadAdKfw/exec";
 
 function apiCall(action, payload = {}) {
   return fetch(GAS_API_URL, {
