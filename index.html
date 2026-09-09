@@ -2,14 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  >
-
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071126">
-
   <title>KIP Management System</title>
 
   <style>
@@ -34,16 +28,71 @@
     }
   </style>
 </head>
-
 <body>
-
   <iframe
     id="kip-app"
-    src="https://script.google.com/macros/s/AKfycbyfubVyNyjcPU4CrOQjf7-WTSUBB1Xr6Y7ljvee5s8DjXRbaQ0vi5dLfefGC8UjxELF/exec"
+    name="kip-app"
+    src="https://script.google.com/macros/s/AKfycbytzwKfo0jeJ9azBFW-K-dtTZLa3oYFlA8uOul4z6L1Lc42QVfvdeIJ9MQzBsvoItaR9g/exec"
     title="KIP Management System"
     allow="clipboard-read; clipboard-write"
     loading="eager"
+    referrerpolicy="strict-origin-when-cross-origin"
   ></iframe>
 
+  <script>
+    const KIP_FRAME = document.getElementById("kip-app");
+    const KIP_GAS_WEB_APP_URL = KIP_FRAME.getAttribute("src") || "";
+
+    function isTrustedGasMessageOrigin(origin) {
+      try {
+        const url = new URL(origin);
+        return url.protocol === "https:" && (
+          url.hostname === "script.google.com" ||
+          url.hostname.endsWith(".googleusercontent.com")
+        );
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function normalizeAllowedGasUrl(rawUrl) {
+      try {
+        const base = new URL(KIP_GAS_WEB_APP_URL);
+        const target = new URL(String(rawUrl || ""), base);
+
+        // Only allow navigation within this exact Apps Script Web App deployment.
+        if (target.protocol !== "https:") return null;
+        if (target.origin !== base.origin) return null;
+        if (target.pathname !== base.pathname) return null;
+
+        return target.toString();
+      } catch (err) {
+        return null;
+      }
+    }
+
+    window.addEventListener("message", function(event) {
+      const data = event && event.data;
+      if (!data || data.source !== "KIP_GAS_APP" || data.type !== "KIP_NAVIGATE") return;
+      if (!isTrustedGasMessageOrigin(event.origin)) return;
+
+      const targetUrl = normalizeAllowedGasUrl(data.url);
+      if (!targetUrl) return;
+
+      // Acknowledge before replacing the frame so the current GAS document can
+      // cancel its direct-navigation fallback cleanly.
+      try {
+        event.source.postMessage({
+          source: "KIP_GITHUB_HOST",
+          type: "KIP_NAV_ACK",
+          requestId: data.requestId || ""
+        }, event.origin);
+      } catch (err) {}
+
+      requestAnimationFrame(function() {
+        KIP_FRAME.src = targetUrl;
+      });
+    });
+  </script>
 </body>
 </html>
